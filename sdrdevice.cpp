@@ -10,12 +10,12 @@ SdrDevice::SdrDevice(QObject *parent):
     sample_rate            = DEFAULT_SAMPLE_RATE;
     audio_samp_rate        = DEFAULT_AUDIO_SAMPLE_RATE;
     currentFrequency       = DEFAULT_FREQUENCY;
-    transition             = static_cast<int>(DEFAULT_CUT_OFF / 12);
+    transition             = DEFAULT_CUT_OFF;
     audio_gain             = DEFAULT_AUDIO_GAIN;
     cut_off                = DEFAULT_CUT_OFF;
-    decimation             = static_cast<int>(DEFAULT_SAMPLE_RATE/DEFAULT_CUT_OFF);
-    interpolation          = static_cast<int>(DEFAULT_SAMPLE_RATE / 1e6);
-    resampler_decimation   = static_cast<int>(DEFAULT_SAMPLE_RATE * decimation / 1e6);
+    decimation             = 6;
+    interpolation          = 1;
+    resampler_decimation   = 70;
 
     try {
         std::string dev = "hackrf=0";
@@ -106,8 +106,8 @@ void SdrDevice::setMode(ReceiverMode rMode)
         gr::filter::rational_resampler_ccf::sptr resampler_rx = gr::filter::rational_resampler_ccf::make(interpolation, resampler_decimation);
 
         auto low_pass_filter = gr::filter::fir_filter_fff::make(
-            6,
-            gr::filter::firdes::low_pass(1, sample_rate, cut_off, transition, gr::fft::window::WIN_HAMMING, 6.76));
+            decimation,
+            gr::filter::firdes::low_pass(1, sample_rate, cut_off, transition, gr::fft::window::WIN_HAMMING));
 
         gr::analog::quadrature_demod_cf::sptr quad_demod = gr::analog::quadrature_demod_cf::make(1.0);
 
