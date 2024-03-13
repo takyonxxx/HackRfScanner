@@ -38,7 +38,7 @@
 #define _HZ(x) ((x) * 1)
 #define DEFAULT_SAMPLE_RATE             _MHZ(20)
 #define DEFAULT_AUDIO_SAMPLE_RATE       _KHZ(48)
-#define DEFAULT_CUT_OFF                 _KHZ(300)
+#define DEFAULT_CUT_OFF                 _KHZ(400)
 #define DEFAULT_FREQUENCY               _MHZ(100)
 #define DEFAULT_AUDIO_GAIN              1.0
 
