@@ -20,10 +20,13 @@
 #include <gnuradio/gr_complex.h>
 #include <gnuradio/blocks/null_sink.h>
 #include <gnuradio/soapy/source.h>
+#include <gnuradio/soapy/sink.h>
 #include <gnuradio/blocks/complex_to_float.h>
 
 #include <gnuradio/audio/source.h>
+#include <gnuradio/blocks/wavfile_source.h>
 #include <gnuradio/analog/frequency_modulator_fc.h>
+#include <gnuradio/analog/sig_source.h>
 
 #include "custombuffer.h"
 
@@ -80,6 +83,7 @@ public:
 
 private:
     gr::soapy::source::sptr hackrf_soapy_source;
+    gr::soapy::sink::sptr hackrf_soapy_sink;
     gr::top_block_sptr tb;
     std::shared_ptr<CustomBuffer> customBuffer;
 
@@ -95,6 +99,7 @@ private:
     bool m_ptt;
     Demod currentDemod;
     FreqMod currentFreqMod;
+    ReceiverMode currentReceiverMode;
 
     QString enumDemodToString(Demod demod)
     {
