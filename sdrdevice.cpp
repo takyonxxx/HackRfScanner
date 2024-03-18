@@ -44,6 +44,7 @@ SdrDevice::SdrDevice(QObject *parent):
         hackrf_soapy_source->set_gain(0, "LNA", std::min(std::max(40.0, 0.0), HACKRF_RX_LNA_MAX_DB));
         hackrf_soapy_source->set_gain(0, "VGA", std::min(std::max(40.0, 0.0), HACKRF_RX_VGA_MAX_DB));
 
+
         // Print device information
         qDebug() << "Center Frequency: " << hackrf_soapy_source->get_frequency(0) << " Hz";
         qDebug() << "Sample Rate: " << hackrf_soapy_source->get_sample_rate(0) << " Hz";
@@ -56,7 +57,7 @@ SdrDevice::SdrDevice(QObject *parent):
     }
 
     tb = gr::make_top_block("HackRf");
-    setMode(ReceiverMode::RX);
+    setMode(ReceiverMode::TX);
 }
 
 SdrDevice::~SdrDevice()
@@ -82,22 +83,19 @@ void SdrDevice::setMode(ReceiverMode rMode)
 
     if (rMode == ReceiverMode::TX) {
 
-//        const int interpolation = 8;
-//        const int resampler_decimation = 4;
+        // Add microphone source block
+        auto audio_source = gr::audio::source::make(audio_samp_rate, "MacBook Pro Microphone", true);
+        // FM modulator block
+        auto fm_mod = gr::analog::frequency_modulator_fc::make(1.0);
 
-//        // Add microphone source block
-//        auto audio_source = gr::audio::source::make(audio_samp_rate, "MacBook Pro Microphone", true);
-//        // FM modulator block
-//        auto fm_mod = gr::analog::frequency_modulator_fc::make(1.0);
+        auto low_pass_filter = gr::filter::firdes::low_pass(1, audio_samp_rate, 20e3, 5e3);
 
-//        auto low_pass_filter = gr::filter::firdes::low_pass(1, audio_samp_rate, 20e3, 5e3);
+        gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(
+            interpolation, resampler_decimation, low_pass_filter);
 
-//        gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(
-//            interpolation, resampler_decimation, low_pass_filter);
-
-//        tb->connect(audio_source, 0, fm_mod, 0);
-//        tb->connect(fm_mod, 0, resampler_tx, 0);
-//        tb->connect(resampler_tx, 0, hackrf_soapy_source, 0);
+        tb->connect(audio_source, 0, fm_mod, 0);
+        tb->connect(fm_mod, 0, resampler_tx, 0);
+        tb->connect(resampler_tx, 0, hackrf_soapy_source, 0);
 
         qDebug() << "Switched to TX mode.";
 

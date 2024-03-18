@@ -37,14 +37,17 @@ macos {
     INCLUDEPATH += /opt/homebrew/Cellar/boost/1.84.0_1/include
     INCLUDEPATH += /opt/homebrew/Cellar/soapysdr/0.8.1_1/include
 
-    INCLUDEPATH += /usr/local/Cellar/spdlog/1.12.0/include
-    INCLUDEPATH += /usr/local/Cellar/fmt/10.2.1_1/include
-    INCLUDEPATH += /usr/local/Cellar/gmp/6.3.0/include
-    INCLUDEPATH += /usr/local/Cellar/gnuradio/3.10.9.2_1/include
-    INCLUDEPATH += /usr/local/Cellar/boost/1.84.0_1/include
-    INCLUDEPATH += /usr/local/Cellar/soapysdr/0.8.1_1/include
+#    INCLUDEPATH += /usr/local/Cellar/spdlog/1.12.0/include
+#    INCLUDEPATH += /usr/local/Cellar/fmt/10.2.1_1/include
+#    INCLUDEPATH += /usr/local/Cellar/gmp/6.3.0/include
+#    INCLUDEPATH += /usr/local/Cellar/gnuradio/3.10.9.2_1/include
+#    INCLUDEPATH += /usr/local/Cellar/boost/1.84.0_1/include
+#    INCLUDEPATH += /usr/local/Cellar/soapysdr/0.8.1_1/include
 
-    LIBS += -L/usr/local/Cellar/gnuradio/3.10.9.2_1/lib \
+    INCLUDEPATH += /opt/homebrew/Cellar/gnuradio/3.10.9.2_1/lib
+#    INCLUDEPATH +=  /usr/local/Cellar/gnuradio/3.10.9.2_1/lib
+
+    LIBS += -L/opt/homebrew/Cellar/gnuradio/3.10.9.2_1/lib \
         -lgnuradio-analog \
         -lgnuradio-blocks \
         -lgnuradio-digital \
@@ -56,8 +59,10 @@ macos {
         -lgnuradio-pmt \
         -lgnuradio-uhd
 
-    LIBS += -L/usr/local/Cellar/boost/1.84.0_1/lib -lboost_system -lboost_filesystem-mt -lboost_program_options
-    LIBS += -L/usr/local/Cellar/soapysdr/0.8.1_1/lib -lSoapySDR
+    LIBS += -L/opt/homebrew/Cellar/boost/1.84.0_1/lib -lboost_system -lboost_filesystem-mt -lboost_program_options
+    LIBS += -L/opt/homebrew/Cellar/soapysdr/0.8.1_1/lib -lSoapySDR
+#    LIBS += -L/usr/local/Cellar/boost/1.84.0_1/lib -lboost_system -lboost_filesystem-mt -lboost_program_options
+#    LIBS += -L/usr/local/Cellar/soapysdr/0.8.1_1/lib -lSoapySDR
 }
 
 unix:!macx{
