@@ -23,6 +23,7 @@ private slots:
     void infoFrequency(int f);
     void loadSettings();
     void saveSettings();
+    void get_fft(QVector<std::complex<float>>);
 
     void on_pushToggleSdr_clicked();
     void on_pushExit_clicked();

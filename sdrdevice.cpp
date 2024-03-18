@@ -17,7 +17,9 @@ SdrDevice::SdrDevice(QObject *parent):
     interpolation          = 1;
     resampler_decimation   = 70;
 
-    currentReceiverMode = ReceiverMode::TX;
+    currentReceiverMode = ReceiverMode::RX;
+    customBuffer = std::make_shared<CustomBuffer>("custom_buffer");
+    connect(customBuffer.get(), &CustomBuffer::send_fft, this, &SdrDevice::get_fft);
 
     try {
         std::string dev = "hackrf=0";
@@ -148,6 +150,7 @@ void SdrDevice::setMode(ReceiverMode rMode)
         auto audio_sink = gr::audio::sink::make(audio_samp_rate, "", true);
 
         tb->connect(hackrf_soapy_source, 0, resampler_rx, 0);
+        tb->connect(hackrf_soapy_source, 0, customBuffer, 0);
         tb->connect(resampler_rx, 0, quad_demod, 0);
         tb->connect(quad_demod, 0, low_pass_filter, 0);
         tb->connect(low_pass_filter, 0, audio_sink, 0);
@@ -164,4 +167,9 @@ void SdrDevice::start()
 void SdrDevice::stop()
 {
     tb->stop();
+}
+
+void SdrDevice::get_fft(QVector<std::complex<float>> data)
+{
+    emit send_fft(data);
 }

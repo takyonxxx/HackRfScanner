@@ -81,6 +81,9 @@ public:
     void start();
     void stop();
 
+private slots:
+    void get_fft(QVector<std::complex<float>>);
+
 private:
     gr::soapy::source::sptr hackrf_soapy_source;
     gr::soapy::sink::sptr hackrf_soapy_sink;
@@ -131,6 +134,7 @@ private:
         }
     }
 signals:
+    void send_fft(QVector<std::complex<float>>);
     void infoFrequency(int f);
 };
 
