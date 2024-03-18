@@ -44,6 +44,10 @@
 #define DEFAULT_CUT_OFF                 _KHZ(400)
 #define DEFAULT_FREQUENCY               _MHZ(100)
 #define DEFAULT_AUDIO_GAIN              1.0
+#define DEFAULT_FFT_SIZE                8192 * 4
+#define DEFAULT_FFT_RATE                25 //Hz
+#define MAX_FFT_SIZE                 DEFAULT_FFT_SIZE
+#define RESET_FFT_FACTOR             -72
 
 #define HACKRF_RX_VGA_MAX_DB 62.0
 #define HACKRF_TX_VGA_MAX_DB 47.0
@@ -80,9 +84,6 @@ public:
 
     void start();
     void stop();
-
-private slots:
-    void get_fft(QVector<std::complex<float>>);
 
 private:
     gr::soapy::source::sptr hackrf_soapy_source;
@@ -133,8 +134,7 @@ private:
             return "Unknown";
         }
     }
-signals:
-    void send_fft(QVector<std::complex<float>>);
+signals:   
     void infoFrequency(int f);
 };
 

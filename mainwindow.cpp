@@ -45,7 +45,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     sdrDevice = new SdrDevice(this);
     connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
-    connect(sdrDevice, &SdrDevice::send_fft, this, &MainWindow::get_fft);
 
     QString homePath = QDir::homePath();
     m_sSettingsFile = homePath + "/settings.ini";
@@ -222,9 +221,4 @@ void MainWindow::saveSettings()
     settings.setValue("freq_type_index", QString::number(freq_type_index));
     settings.setValue("demod_index", QString::number(demod_index));
     settings.setValue("current_frequency", QString::number(currentFrequency));
-}
-
-void MainWindow::get_fft(QVector<std::complex<float>> data)
-{
-
 }
