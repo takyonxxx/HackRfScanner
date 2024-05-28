@@ -42,11 +42,11 @@ SdrDevice::SdrDevice(QObject *parent):
                 throw std::runtime_error("Failed to create SoapySDR sink.");
             }
 
-            hackrf_soapy_sink->set_sample_rate(1, sample_rate);
+            hackrf_soapy_sink->set_sample_rate(1, sample_rate/20);
             hackrf_soapy_sink->set_bandwidth(1, 0);
             hackrf_soapy_sink->set_frequency(1, currentFrequency);
             hackrf_soapy_sink->set_gain(1, "AMP", true);
-            hackrf_soapy_sink->set_gain(0, "VGA", std::min(std::max(16.0, 0.0), HACKRF_TX_VGA_MAX_DB));
+            hackrf_soapy_sink->set_gain(1, "VGA", std::min(std::max(29.0, 0.0), HACKRF_TX_VGA_MAX_DB));
 
             // Print device information
             qDebug() << "Center Frequency: " << hackrf_soapy_sink->get_frequency(0) << " Hz";
@@ -118,14 +118,7 @@ void SdrDevice::setMode(ReceiverMode rMode)
 
         // Add microphone source block
         auto audio_source = gr::audio::source::make(audio_samp_rate, "MacBook Pro Microphone", true);
-
-        gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(50, 12);
-
-        //        self.connect((self.analog_wfm_tx_0, 0), (self.rational_resampler_xxx_0, 0))
-        //        self.connect((self.blocks_wavfile_source_0, 0), (self.analog_wfm_tx_0, 0))
-        //        self.connect((self.rational_resampler_xxx_0, 0), (self.soapy_hackrf_sink_0, 0))
-        //  auto blocks_wavfile_source_0 = gr::blocks::wavfile_source::make("/Users/turkaybiliyor/Desktop/HackRfScanner/440Hz_44100Hz_16bit_05sec.wav", true);
-
+        gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(48, 1);
         //       // FM modulator block
         auto fm_mod = gr::analog::frequency_modulator_fc::make(1.0);
 
@@ -159,7 +152,7 @@ void SdrDevice::setMode(ReceiverMode rMode)
 
 void SdrDevice::start()
 {
-    tb->start();
+    tb->start();    
 }
 
 void SdrDevice::stop()
