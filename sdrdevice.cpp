@@ -112,20 +112,20 @@ double SdrDevice::getCenterFrequency() const
 void SdrDevice::setMode(ReceiverMode rMode)
 {   
     tb->disconnect_all();
-    gr::blocks::null_sink::sptr null_sink = gr::blocks::null_sink::make(sizeof(gr_complex) / 2);
+    gr::blocks::null_sink::sptr null_sink = gr::blocks::null_sink::make(sizeof(gr_complex) / 2);    
 
     if (rMode == ReceiverMode::TX) {
-
-        // Add microphone source block
+        std::vector<float> pre_emphasis_taps = {/* coefficients for pre-emphasis */};
         auto audio_source = gr::audio::source::make(audio_samp_rate, "MacBook Pro Microphone", true);
+        auto pre_emphasis_filter = gr::filter::fir_filter_fff::make(1, pre_emphasis_taps);
         gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(48, 1);
-        //       // FM modulator block
-        auto fm_mod = gr::analog::frequency_modulator_fc::make(1.0);
+        float sensitivity = 2.0 * M_PI * (5e3 / audio_samp_rate);  // max_dev/audio_samp_rate
+        auto fm_mod = gr::analog::frequency_modulator_fc::make(sensitivity);
 
-        tb->connect(audio_source, 0, fm_mod, 0);
+        tb->connect(audio_source, 0, pre_emphasis_filter, 0);
+        tb->connect(pre_emphasis_filter, 0, fm_mod, 0);
         tb->connect(fm_mod, 0, resampler_tx, 0);
         tb->connect(resampler_tx, 0, hackrf_soapy_sink, 0);
-
         qDebug() << "Switched to TX mode.";
 
     } else if (rMode == ReceiverMode::RX)

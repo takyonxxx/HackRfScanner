@@ -11,7 +11,7 @@ options:
     gen_linking: dynamic
     generate_options: qt_gui
     hier_block_src_path: '.:'
-    id: top_block
+    id: fm_transmitter
     max_nouts: '0'
     output_language: python
     placement: (0,0)
@@ -33,7 +33,7 @@ options:
     state: enabled
 
 blocks:
-- name: samp_rate
+- name: audio_samp_rate
   id: variable
   parameters:
     comment: ''
@@ -42,7 +42,52 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 84]
+    coordinate: [232, 8.0]
+    rotation: 0
+    state: enabled
+- name: center_freq
+  id: variable
+  parameters:
+    comment: ''
+    value: int(144e6)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 8.0]
+    rotation: 0
+    state: enabled
+- name: mic_gain
+  id: variable_qtgui_range
+  parameters:
+    comment: ''
+    gui_hint: ''
+    label: mic_gain
+    min_len: '200'
+    orient: QtCore.Qt.Horizontal
+    rangeType: float
+    start: '1'
+    step: '0.1'
+    stop: '5'
+    value: '4'
+    widget: counter_slider
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [152, 4.0]
+    rotation: 0
+    state: enabled
+- name: tx_samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: int(2e6)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [384, 8.0]
     rotation: 0
     state: enabled
 - name: analog_wfm_tx_0
@@ -50,19 +95,19 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    audio_rate: samp_rate
+    audio_rate: audio_samp_rate
     comment: ''
     fh: '-1.0'
     max_dev: 5e3
     maxoutbuf: '0'
     minoutbuf: '0'
-    quad_rate: samp_rate
+    quad_rate: audio_samp_rate
     tau: 75e-6
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [480, 212]
+    coordinate: [352, 136.0]
     rotation: 0
     state: enabled
 - name: audio_source_0
@@ -81,7 +126,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [32, 308]
+    coordinate: [24, 156.0]
     rotation: 0
     state: enabled
 - name: blocks_multiply_const_vxx_0
@@ -90,7 +135,7 @@ blocks:
     affinity: ''
     alias: ''
     comment: ''
-    const: '0'
+    const: mic_gain
     maxoutbuf: '0'
     minoutbuf: '0'
     type: float
@@ -99,7 +144,88 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [224, 308]
+    coordinate: [192, 156.0]
+    rotation: 0
+    state: enabled
+- name: freq_sink
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: Spectrum
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'True'
+    average: '0.05'
+    axislabels: 'True'
+    bw: tx_samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    ctrlpanel: 'True'
+    fc: center_freq
+    fftsize: '8192'
+    freqhalf: 'True'
+    grid: 'True'
+    gui_hint: ''
+    label: Relative Gain
+    label1: ''
+    label10: ''''''
+    label2: ''''''
+    label3: ''''''
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '""'
+    nconnections: '1'
+    norm_window: 'False'
+    showports: 'True'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_HAMMING
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [752, 20.0]
     rotation: 0
     state: enabled
 - name: rational_resampler_xxx_0
@@ -110,7 +236,7 @@ blocks:
     comment: ''
     decim: '1'
     fbw: '0'
-    interp: '100'
+    interp: int(tx_samp_rate / audio_samp_rate) + 3
     maxoutbuf: '0'
     minoutbuf: '0'
     taps: ''
@@ -119,7 +245,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [752, 220]
+    coordinate: [584, 144.0]
     rotation: 0
     state: enabled
 - name: soapy_hackrf_sink_0
@@ -127,19 +253,19 @@ blocks:
   parameters:
     affinity: ''
     alias: ''
-    amp: 'False'
+    amp: 'True'
     bandwidth: '0'
-    center_freq: 100e06
+    center_freq: center_freq
     comment: ''
     dev_args: hackrf=0
-    samp_rate: 20e06
+    samp_rate: tx_samp_rate
     type: fc32
-    vga: '16'
+    vga: '35'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [944, 212.0]
+    coordinate: [752, 156.0]
     rotation: 0
     state: enabled
 
@@ -147,6 +273,7 @@ connections:
 - [analog_wfm_tx_0, '0', rational_resampler_xxx_0, '0']
 - [audio_source_0, '0', blocks_multiply_const_vxx_0, '0']
 - [blocks_multiply_const_vxx_0, '0', analog_wfm_tx_0, '0']
+- [rational_resampler_xxx_0, '0', freq_sink, '0']
 - [rational_resampler_xxx_0, '0', soapy_hackrf_sink_0, '0']
 
 metadata:

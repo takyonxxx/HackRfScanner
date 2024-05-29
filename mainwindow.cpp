@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+#include "hackrfdevice.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -43,16 +44,18 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_cFreqType->setCurrentIndex(freq_type_index);
     ui->m_cDemod->setCurrentIndex(demod_index);
 
-    sdrDevice = new SdrDevice(this);
-    connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
+    auto hackRfDevice = new HackRfDevice(this);
 
-    QString homePath = QDir::homePath();
-    m_sSettingsFile = homePath + "/settings.ini";
+//    sdrDevice = new SdrDevice(this);
+//    connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
 
-    if (QFile(m_sSettingsFile).exists())
-        loadSettings();
-    else
-        saveSettings();
+//    QString homePath = QDir::homePath();
+//    m_sSettingsFile = homePath + "/settings.ini";
+
+//    if (QFile(m_sSettingsFile).exists())
+//        loadSettings();
+//    else
+//        saveSettings();
 
 }
 

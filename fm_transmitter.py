@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: HackRf
+# Title: Fm Transmitter
 # GNU Radio version: 3.10.9.2
 
 from PyQt5 import Qt
@@ -29,12 +29,12 @@ import sip
 
 
 
-class hackrf_soapysdr(gr.top_block, Qt.QWidget):
+class fm_transmitter(gr.top_block, Qt.QWidget):
 
     def __init__(self):
-        gr.top_block.__init__(self, "HackRf", catch_exceptions=True)
+        gr.top_block.__init__(self, "Fm Transmitter", catch_exceptions=True)
         Qt.QWidget.__init__(self)
-        self.setWindowTitle("HackRf")
+        self.setWindowTitle("Fm Transmitter")
         qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
@@ -52,7 +52,7 @@ class hackrf_soapysdr(gr.top_block, Qt.QWidget):
         self.top_grid_layout = Qt.QGridLayout()
         self.top_layout.addLayout(self.top_grid_layout)
 
-        self.settings = Qt.QSettings("GNU Radio", "hackrf_soapysdr")
+        self.settings = Qt.QSettings("GNU Radio", "fm_transmitter")
 
         try:
             geometry = self.settings.value("geometry")
@@ -64,54 +64,41 @@ class hackrf_soapysdr(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.sample_rate = sample_rate = 20e6
-        self.channel_width = channel_width = 300e3
-        self.center_freq = center_freq = 100e6
-        self.audio_gain = audio_gain = 0.75
+        self.tx_samp_rate = tx_samp_rate = int(2e6)
+        self.mic_gain = mic_gain = 4
+        self.center_freq = center_freq = int(144e6)
+        self.audio_samp_rate = audio_samp_rate = int(44.1e3)
 
         ##################################################
         # Blocks
         ##################################################
 
-        self._center_freq_range = qtgui.Range(80e6, 108e6, 0.1, 100e6, 200)
-        self._center_freq_win = qtgui.RangeWidget(self._center_freq_range, self.set_center_freq, "Frequency", "counter_slider", float, QtCore.Qt.Horizontal)
-        self.top_layout.addWidget(self._center_freq_win)
-        self._audio_gain_range = qtgui.Range(0, 1, 0.05, 0.75, 200)
-        self._audio_gain_win = qtgui.RangeWidget(self._audio_gain_range, self.set_audio_gain, "Volume", "counter_slider", float, QtCore.Qt.Horizontal)
-        self.top_layout.addWidget(self._audio_gain_win)
-        self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
-                interpolation=12,
-                decimation=6,
-                taps=[],
-                fractional_bw=0)
-        self.low_pass_filter = filter.fir_filter_ccf(
-            (int(sample_rate/channel_width)),
-            firdes.low_pass(
-                1,
-                sample_rate,
-                150e3,
-                10e3,
-                window.WIN_HAMMING,
-                6.76))
-        self.hackrf_source = None
+        self._mic_gain_range = qtgui.Range(1, 5, 0.1, 4, 200)
+        self._mic_gain_win = qtgui.RangeWidget(self._mic_gain_range, self.set_mic_gain, "mic_gain", "counter_slider", float, QtCore.Qt.Horizontal)
+        self.top_layout.addWidget(self._mic_gain_win)
+        self.soapy_hackrf_sink_0 = None
         dev = 'driver=hackrf'
         stream_args = ''
         tune_args = ['']
         settings = ['']
 
-        self.hackrf_source = soapy.source(dev, "fc32", 1, 'hackrf=0',
+        self.soapy_hackrf_sink_0 = soapy.sink(dev, "fc32", 1, 'hackrf=0',
                                   stream_args, tune_args, settings)
-        self.hackrf_source.set_sample_rate(0, sample_rate)
-        self.hackrf_source.set_bandwidth(0, 0)
-        self.hackrf_source.set_frequency(0, center_freq)
-        self.hackrf_source.set_gain(0, 'AMP', False)
-        self.hackrf_source.set_gain(0, 'LNA', min(max(40, 0.0), 40.0))
-        self.hackrf_source.set_gain(0, 'VGA', min(max(40, 0.0), 62.0))
+        self.soapy_hackrf_sink_0.set_sample_rate(0, tx_samp_rate)
+        self.soapy_hackrf_sink_0.set_bandwidth(0, 0)
+        self.soapy_hackrf_sink_0.set_frequency(0, center_freq)
+        self.soapy_hackrf_sink_0.set_gain(0, 'AMP', True)
+        self.soapy_hackrf_sink_0.set_gain(0, 'VGA', min(max(35, 0.0), 47.0))
+        self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
+                interpolation=(int(tx_samp_rate / audio_samp_rate) + 3),
+                decimation=1,
+                taps=[],
+                fractional_bw=0)
         self.freq_sink = qtgui.freq_sink_c(
-            1024, #size
-            window.WIN_BLACKMAN_hARRIS, #wintype
+            8192, #size
+            window.WIN_HAMMING, #wintype
             center_freq, #fc
-            sample_rate, #bw
+            tx_samp_rate, #bw
             "", #name
             1,
             None # parent
@@ -120,8 +107,8 @@ class hackrf_soapysdr(gr.top_block, Qt.QWidget):
         self.freq_sink.set_y_axis((-140), 10)
         self.freq_sink.set_y_label('Relative Gain', 'dB')
         self.freq_sink.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
-        self.freq_sink.enable_autoscale(False)
-        self.freq_sink.enable_grid(False)
+        self.freq_sink.enable_autoscale(True)
+        self.freq_sink.enable_grid(True)
         self.freq_sink.set_fft_average(0.05)
         self.freq_sink.enable_axis_labels(True)
         self.freq_sink.enable_control_panel(True)
@@ -150,72 +137,74 @@ class hackrf_soapysdr(gr.top_block, Qt.QWidget):
         self._freq_sink_win = sip.wrapinstance(self.freq_sink.qwidget(), Qt.QWidget)
         self.top_layout.addWidget(self._freq_sink_win)
         self.freq_sink.set_block_alias("Spectrum")
-        self.blocks_multiply_const_vxx_0 = blocks.multiply_const_ff(audio_gain)
-        self.audio_sink = audio.sink(48000, '', True)
-        self.analog_wfm_rcv_0 = analog.wfm_rcv(
-        	quad_rate=600e3,
-        	audio_decimation=12,
+        self.blocks_multiply_const_vxx_0 = blocks.multiply_const_ff(mic_gain)
+        self.audio_source_0 = audio.source(44100, '', True)
+        self.analog_wfm_tx_0 = analog.wfm_tx(
+        	audio_rate=audio_samp_rate,
+        	quad_rate=audio_samp_rate,
+        	tau=(75e-6),
+        	max_dev=5e3,
+        	fh=(-1.0),
         )
 
 
         ##################################################
         # Connections
         ##################################################
-        self.connect((self.analog_wfm_rcv_0, 0), (self.blocks_multiply_const_vxx_0, 0))
-        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.audio_sink, 0))
-        self.connect((self.hackrf_source, 0), (self.freq_sink, 0))
-        self.connect((self.hackrf_source, 0), (self.low_pass_filter, 0))
-        self.connect((self.low_pass_filter, 0), (self.rational_resampler_xxx_0, 0))
-        self.connect((self.rational_resampler_xxx_0, 0), (self.analog_wfm_rcv_0, 0))
+        self.connect((self.analog_wfm_tx_0, 0), (self.rational_resampler_xxx_0, 0))
+        self.connect((self.audio_source_0, 0), (self.blocks_multiply_const_vxx_0, 0))
+        self.connect((self.blocks_multiply_const_vxx_0, 0), (self.analog_wfm_tx_0, 0))
+        self.connect((self.rational_resampler_xxx_0, 0), (self.freq_sink, 0))
+        self.connect((self.rational_resampler_xxx_0, 0), (self.soapy_hackrf_sink_0, 0))
 
 
     def closeEvent(self, event):
-        self.settings = Qt.QSettings("GNU Radio", "hackrf_soapysdr")
+        self.settings = Qt.QSettings("GNU Radio", "fm_transmitter")
         self.settings.setValue("geometry", self.saveGeometry())
         self.stop()
         self.wait()
 
         event.accept()
 
-    def get_sample_rate(self):
-        return self.sample_rate
+    def get_tx_samp_rate(self):
+        return self.tx_samp_rate
 
-    def set_sample_rate(self, sample_rate):
-        self.sample_rate = sample_rate
-        self.freq_sink.set_frequency_range(self.center_freq, self.sample_rate)
-        self.hackrf_source.set_sample_rate(0, self.sample_rate)
-        self.low_pass_filter.set_taps(firdes.low_pass(1, self.sample_rate, 150e3, 10e3, window.WIN_HAMMING, 6.76))
+    def set_tx_samp_rate(self, tx_samp_rate):
+        self.tx_samp_rate = tx_samp_rate
+        self.freq_sink.set_frequency_range(self.center_freq, self.tx_samp_rate)
+        self.soapy_hackrf_sink_0.set_sample_rate(0, self.tx_samp_rate)
 
-    def get_channel_width(self):
-        return self.channel_width
+    def get_mic_gain(self):
+        return self.mic_gain
 
-    def set_channel_width(self, channel_width):
-        self.channel_width = channel_width
+    def set_mic_gain(self, mic_gain):
+        self.mic_gain = mic_gain
+        self.blocks_multiply_const_vxx_0.set_k(self.mic_gain)
 
     def get_center_freq(self):
         return self.center_freq
 
     def set_center_freq(self, center_freq):
         self.center_freq = center_freq
-        self.freq_sink.set_frequency_range(self.center_freq, self.sample_rate)
-        self.hackrf_source.set_frequency(0, self.center_freq)
+        self.freq_sink.set_frequency_range(self.center_freq, self.tx_samp_rate)
+        self.soapy_hackrf_sink_0.set_frequency(0, self.center_freq)
 
-    def get_audio_gain(self):
-        return self.audio_gain
+    def get_audio_samp_rate(self):
+        return self.audio_samp_rate
 
-    def set_audio_gain(self, audio_gain):
-        self.audio_gain = audio_gain
-        self.blocks_multiply_const_vxx_0.set_k(self.audio_gain)
-
+    def set_audio_samp_rate(self, audio_samp_rate):
+        self.audio_samp_rate = audio_samp_rate
 
 
 
-def main(top_block_cls=hackrf_soapysdr, options=None):
+
+def main(top_block_cls=fm_transmitter, options=None):
 
     qapp = Qt.QApplication(sys.argv)
 
     tb = top_block_cls()
 
+    tb.start()
 
     tb.show()
 

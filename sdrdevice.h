@@ -22,6 +22,7 @@
 #include <gnuradio/soapy/source.h>
 #include <gnuradio/soapy/sink.h>
 #include <gnuradio/blocks/complex_to_float.h>
+#include <gnuradio/analog/frequency_modulator_fc.h>
 
 #include <gnuradio/audio/source.h>
 #include <gnuradio/blocks/wavfile_source.h>

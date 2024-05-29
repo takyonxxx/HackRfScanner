@@ -11,6 +11,7 @@ CONFIG += c++17
 SOURCES += \
     custombuffer.cpp \
     freqctrl.cpp \
+    hackrfdevice.cpp \
     main.cpp \
     mainwindow.cpp \
     sdrdevice.cpp
@@ -18,6 +19,7 @@ SOURCES += \
 HEADERS += \
     custombuffer.h \
     freqctrl.h \
+    hackrfdevice.h \
     mainwindow.h \
     sdrdevice.h
 
@@ -30,16 +32,20 @@ macos {
     QMAKE_ASSET_CATALOGS = $$PWD/macos/Assets.xcassets
     QMAKE_ASSET_CATALOGS_APP_ICON = "AppIcon"
 
-   INCLUDEPATH += /usr/local/Cellar/spdlog/1.13.0/include
-   INCLUDEPATH += /usr/local/Cellar/fmt/10.2.1_1/include
-   INCLUDEPATH += /usr/local/Cellar/gmp/6.3.0/include
-   INCLUDEPATH += /usr/local/Cellar/volk/3.1.2/include
-   INCLUDEPATH += /usr/local/Cellar/gnuradio/3.10.9.2_4/include
-   INCLUDEPATH += /usr/local/Cellar/boost/1.85.0/include
-   INCLUDEPATH += /usr/local/Cellar/soapysdr/0.8.1_1/include
-   INCLUDEPATH += /usr/local/Cellar/fftw/3.3.10_1/include
+    HOMEBREW_CELLAR_PATH = /opt/homebrew/Cellar
 
-    LIBS += -L/usr/local/Cellar/gnuradio/3.10.9.2_4/lib \
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/hackrf/2024.02.1/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/spdlog/1.13.0/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/fmt/10.2.1_1/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/gmp/6.3.0/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/volk/3.1.2/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/gnuradio/3.10.9.2_3/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/boost/1.85.0/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/soapysdr/0.8.1_1/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/fftw/3.3.10_1/include
+    INCLUDEPATH += $$HOMEBREW_CELLAR_PATH/portaudio/19.7.0/include
+
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/gnuradio/3.10.9.2_3/lib \
         -lgnuradio-analog \
         -lgnuradio-blocks \
         -lgnuradio-digital \
@@ -51,9 +57,11 @@ macos {
         -lgnuradio-pmt \
         -lgnuradio-uhd
 
-    LIBS += -L/usr/local/Cellar/boost/1.85.0/lib -lboost_system -lboost_filesystem-mt -lboost_program_options
-    LIBS += -L/usr/local/Cellar/soapysdr/0.8.1_1/lib -lSoapySDR
-    LIBS += -L/usr/local/Cellar/fftw/3.3.10_1/lib -lfftw3f
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/hackrf/2024.02.1/lib -lhackrf
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/boost/1.85.0/lib -lboost_system -lboost_filesystem-mt -lboost_program_options
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/soapysdr/0.8.1_1/lib -lSoapySDR
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/fftw/3.3.10_1/lib -lfftw3f
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/portaudio/19.7.0/lib -lportaudio
 
 }
 
@@ -85,3 +93,6 @@ unix:!macx{
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    CMakeLists.txt
