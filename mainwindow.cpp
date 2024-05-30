@@ -9,7 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("HackRf");
 
-    ui->m_pBSpeak->setStyleSheet("font-size: 18pt; font: bold; color: #ffffff; background-color: #900C3F;");
+    ui->m_pBPtt->setStyleSheet("font-size: 18pt; font: bold; color: #ffffff; background-color: #900C3F;");
     ui->m_pBSetFreq->setStyleSheet("font-size: 18pt; font: bold; color: #ffffff; background-color: #900C3F;");
     ui->m_cFreqType->setStyleSheet("font-size: 18pt; font: bold; color: #ffffff; background-color: #900C3F;");
     ui->m_cDemod->setStyleSheet("font-size: 18pt; font: bold; color: #ffffff; background-color: #900C3F;");
@@ -43,27 +43,21 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_cFreqType->setCurrentIndex(freq_type_index);
     ui->m_cDemod->setCurrentIndex(demod_index);
 
-//    hackRfDevice = new HackRfDevice(this);
+    QString homePath = QDir::homePath();
+    m_sSettingsFile = homePath + "/settings.ini";
 
     sdrDevice = new SdrDevice(this);
     connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
-
-    QString homePath = QDir::homePath();
-    m_sSettingsFile = homePath + "/settings.ini";
+    sdrDevice->setMode(ReceiverMode::RX, currentFrequency);
 
     if (QFile(m_sSettingsFile).exists())
         loadSettings();
     else
         saveSettings();
-
 }
 
 MainWindow::~MainWindow()
-{
-    if (hackRfDevice) {
-        delete hackRfDevice;
-        hackRfDevice = nullptr;
-    }
+{   
     if (sdrDevice) {
         delete sdrDevice;
         sdrDevice = nullptr;
@@ -96,22 +90,6 @@ void MainWindow::on_pushExit_clicked()
 {
     exit(0);
 }
-
-
-void MainWindow::on_m_pBSpeak_clicked()
-{
-    if (ui->m_pBSpeak->text() == "Ptt Off")
-    {
-        ui->m_pBSpeak->setText("Ptt On");
-        m_ptt = false;
-    }
-    else
-    {
-        ui->m_pBSpeak->setText("Ptt Off");
-        m_ptt = true;
-    }
-}
-
 
 void MainWindow::on_m_pBSetFreq_clicked()
 {
@@ -231,3 +209,20 @@ void MainWindow::saveSettings()
     settings.setValue("demod_index", QString::number(demod_index));
     settings.setValue("current_frequency", QString::number(currentFrequency));
 }
+
+void MainWindow::on_m_pBPtt_clicked()
+{
+    if (ui->m_pBPtt->text() == "Ptt Off")
+    {
+        ui->m_pBPtt->setText("Ptt On");
+        m_ptt = false;
+        sdrDevice->setMode(ReceiverMode::TX, currentFrequency);
+    }
+    else
+    {
+        ui->m_pBPtt->setText("Ptt Off");
+        m_ptt = true;
+        sdrDevice->setMode(ReceiverMode::RX, currentFrequency);
+    }
+}
+

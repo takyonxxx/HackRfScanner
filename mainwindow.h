@@ -6,7 +6,6 @@
 #include <QApplication>
 #include <QDebug>
 #include "sdrdevice.h"
-#include "hackrfdevice.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,12 +26,12 @@ private slots:
 
     void on_pushToggleSdr_clicked();
     void on_pushExit_clicked();
-    void on_m_pBSpeak_clicked();
     void on_m_pBSetFreq_clicked();
     void on_m_pIncFreq_clicked();
     void on_m_pDecFreq_clicked();
     void on_m_cFreqType_currentIndexChanged(int index);
-    void on_m_cDemod_currentIndexChanged(int index);
+    void on_m_cDemod_currentIndexChanged(int index);    
+    void on_m_pBPtt_clicked();
 
 private:
     SdrDevice *sdrDevice{};
@@ -44,7 +43,6 @@ private:
     QString m_sSettingsFile;
     int freq_type_index;
     int demod_index;
-    HackRfDevice *hackRfDevice{};
 
     Ui::MainWindow *ui;
 };

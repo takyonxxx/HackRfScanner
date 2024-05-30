@@ -11,15 +11,16 @@ CONFIG += c++17
 SOURCES += \
     custombuffer.cpp \
     freqctrl.cpp \
-    hackrfdevice.cpp \
     main.cpp \
     mainwindow.cpp \
     sdrdevice.cpp
 
 HEADERS += \
+    constants.h \
     custombuffer.h \
+    fm_receiver.h \
+    fm_transmitter.h \
     freqctrl.h \
-    hackrfdevice.h \
     mainwindow.h \
     sdrdevice.h
 

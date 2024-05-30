@@ -3,154 +3,97 @@
 SdrDevice::SdrDevice(QObject *parent):
     QObject(parent)
 {
-    m_ptt                  = false;
-    currentDemod    = Demod::DEMOD_WFM;
-    currentFreqMod  = FreqMod::MHZ;
-
-    sample_rate            = DEFAULT_SAMPLE_RATE;
-    audio_samp_rate        = DEFAULT_AUDIO_SAMPLE_RATE;
-    currentFrequency       = DEFAULT_FREQUENCY;
-    transition             = DEFAULT_CUT_OFF;
-    audio_gain             = DEFAULT_AUDIO_GAIN;
-    cut_off                = DEFAULT_CUT_OFF;
-    decimation             = 6;
-    interpolation          = 1;
-    resampler_decimation   = 70;
-
-    currentReceiverMode = ReceiverMode::TX;
-    customBuffer = std::make_shared<CustomBuffer>("custom_buffer");
-
-    try {
-
-        std::string dev = "hackrf=0";
-        std::string stream_args = "";
-        std::vector<std::string> tune_args = {""};
-        std::vector<std::string> settings = {""};
-
-        if (currentReceiverMode == ReceiverMode::TX)
-        {
-            hackrf_soapy_sink = gr::soapy::sink::make(
-                "hackrf",
-                "fc32",
-                1,
-                dev,
-                stream_args,
-                tune_args,
-                settings
-                );
-
-            if (!hackrf_soapy_sink) {
-                qDebug() << "Failed to create SoapySDR sink.";
-                return;
-            }
-
-            hackrf_soapy_sink->set_sample_rate(0, sample_rate/20);
-            hackrf_soapy_sink->set_bandwidth(0, 0);
-            hackrf_soapy_sink->set_frequency(0, currentFrequency);
-            hackrf_soapy_sink->set_gain(0, "AMP", true);
-            hackrf_soapy_sink->set_gain(0, "VGA", std::min(std::max(29.0, 0.0), HACKRF_TX_VGA_MAX_DB));
-
-            qDebug() << "Center Frequency: " << hackrf_soapy_sink->get_frequency(0) << " Hz";
-            qDebug() << "Sample Rate: " << hackrf_soapy_sink->get_sample_rate(0) << " Hz";
-            qDebug() << "Actual TX Gain: " << hackrf_soapy_sink->get_gain(0) << " dB...";
-        }
-        else
-        {
-            hackrf_soapy_source = gr::soapy::source::make(
-                "hackrf",
-                "fc32",
-                1,
-                dev,
-                stream_args,
-                tune_args,
-                settings
-                );
-
-            if (!hackrf_soapy_source) {
-                throw std::runtime_error("Failed to create SoapySDR source.");
-            }
-
-            hackrf_soapy_source->set_sample_rate(0, sample_rate);
-            hackrf_soapy_source->set_bandwidth(0, 0);
-            hackrf_soapy_source->set_frequency(0, currentFrequency);
-            hackrf_soapy_source->set_gain(0, "AMP", false);
-            hackrf_soapy_source->set_gain(0, "LNA", std::min(std::max(40.0, 0.0), HACKRF_RX_LNA_MAX_DB));
-            hackrf_soapy_source->set_gain(0, "VGA", std::min(std::max(40.0, 0.0), HACKRF_RX_VGA_MAX_DB));
-
-
-            // Print device information
-            qDebug() << "Center Frequency: " << hackrf_soapy_source->get_frequency(0) << " Hz";
-            qDebug() << "Sample Rate: " << hackrf_soapy_source->get_sample_rate(0) << " Hz";
-            qDebug() << "Actual RX Gain: " << hackrf_soapy_source->get_gain(0) << " dB...";
-            qDebug() << "LNA Gain: " << hackrf_soapy_source->get_gain(0, "LNA") << " dB";
-            qDebug() << "VGA Gain: " << hackrf_soapy_source->get_gain(0, "VGA") << " dB";
-        }
-
-
-    } catch (const std::exception &e) {
-        qDebug() << "Source Error: " << e.what();
-    }    
-//    setMode(currentReceiverMode);
+    m_isStarted = false;
 }
 
 SdrDevice::~SdrDevice()
 {
+    if(_receiver)
+    {
+        _receiver->stop();
+        delete _receiver;
+    }
+    if(_transmitter)
+    {
+        _transmitter->stop();
+        delete _transmitter;
+    }
 }
 
 void SdrDevice::setFrequency(double frequency)
 {
-    hackrf_soapy_source->set_frequency(0, frequency);
-    currentFrequency = getCenterFrequency();
-    emit infoFrequency(currentFrequency);
+    if (currentReceiverMode == ReceiverMode::TX)
+    {
+        _transmitter->setCurrentFrequency(frequency);
+    }
+    else
+    {
+        _receiver->setCurrentFrequency(frequency);
+    }
+    emit infoFrequency(getCenterFrequency());
 }
 
 double SdrDevice::getCenterFrequency() const
 {
-    return hackrf_soapy_source->get_frequency(0);
+    if (currentReceiverMode == ReceiverMode::TX)
+    {
+        return _transmitter->getCurrentFrequency();
+    }
+    else
+    {
+        return _receiver->getCurrentFrequency();
+    }
 }
 
-void SdrDevice::setMode(ReceiverMode rMode)
-{
-    tb = gr::make_top_block("HackRf");
-    tb->disconnect_all();
-//    gr::blocks::null_sink::sptr null_sink = gr::blocks::null_sink::make(sizeof(gr_complex) / 2);
-
-    if (rMode == ReceiverMode::TX) {
-        std::vector<float> pre_emphasis_taps = {/* coefficients for pre-emphasis */};
-        auto audio_source = gr::audio::source::make(audio_samp_rate, "MacBook Pro Microphone", true);
-        auto pre_emphasis_filter = gr::filter::fir_filter_fff::make(1, pre_emphasis_taps);
-        gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(48, 1);
-        float sensitivity = 2.0 * M_PI * (5e3 / audio_samp_rate);  // max_dev/audio_samp_rate
-        auto fm_mod = gr::analog::frequency_modulator_fc::make(sensitivity);
-        tb->connect(audio_source, 0, pre_emphasis_filter, 0);
-        tb->connect(pre_emphasis_filter, 0, fm_mod, 0);
-        tb->connect(fm_mod, 0, resampler_tx, 0);
-        tb->connect(resampler_tx, 0, hackrf_soapy_sink, 0);
-        qDebug() << "Switched to TX mode.";
-
-    } else if (rMode == ReceiverMode::RX)
+void SdrDevice::setMode(ReceiverMode rMode, int frequency)
+{    
+    currentReceiverMode = rMode;
+    if (currentReceiverMode == ReceiverMode::TX)
     {
-        gr::filter::rational_resampler_ccf::sptr resampler_rx = gr::filter::rational_resampler_ccf::make(interpolation, resampler_decimation);
-        auto low_pass_filter = gr::filter::fir_filter_fff::make(
-            decimation,
-            gr::filter::firdes::low_pass(1, sample_rate, cut_off, transition, gr::fft::window::WIN_HAMMING));
-        gr::analog::quadrature_demod_cf::sptr quad_demod = gr::analog::quadrature_demod_cf::make(1.0);
-        auto audio_sink = gr::audio::sink::make(audio_samp_rate, "", true);
-        tb->connect(hackrf_soapy_source, 0, resampler_rx, 0);
-        // tb->connect(hackrf_soapy_source, 0, customBuffer, 0);
-        tb->connect(resampler_rx, 0, quad_demod, 0);
-        tb->connect(quad_demod, 0, low_pass_filter, 0);
-        tb->connect(low_pass_filter, 0, audio_sink, 0);
-        qDebug() << "Switched to RX mode.";
+        if(_receiver)
+        {
+            _receiver->stop();
+            delete _receiver;
+        }
+        _transmitter = new FmTransmitter(frequency);
+        if(m_isStarted)
+            _transmitter->start();
+    }
+    else if (currentReceiverMode == ReceiverMode::RX)
+    {
+        if(_transmitter)
+        {
+            _transmitter->stop();
+            delete _transmitter;
+        }
+        _receiver = new FmReceiver(frequency);
+        if(m_isStarted)
+            _receiver->start();
     }
 }
 
 void SdrDevice::start()
 {
-    tb->start();    
+    if (currentReceiverMode == ReceiverMode::TX)
+    {
+        _transmitter->start();
+    }
+    else
+    {
+        _receiver->start();
+    }
+    m_isStarted = true;
 }
 
 void SdrDevice::stop()
 {
-    tb->stop();
+    if (currentReceiverMode == ReceiverMode::TX)
+    {
+        _transmitter->stop();
+    }
+    else
+    {
+        _receiver->stop();
+    }
+    m_isStarted = false;
 }

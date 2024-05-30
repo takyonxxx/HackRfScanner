@@ -6,54 +6,8 @@
 #include <QDebug>
 #include <QThread>
 
-#include <gnuradio/constants.h>
-#include <gnuradio/prefs.h>
-#include <gnuradio/top_block.h>
-#include <gnuradio/sync_block.h>
-#include <gnuradio/blocks/multiply_const.h>
-#include <gnuradio/filter/rational_resampler.h>
-#include <gnuradio/audio/sink.h>
-#include <gnuradio/filter/firdes.h>
-#include <gnuradio/filter/fir_filter_blk.h>
-#include <gnuradio/analog/quadrature_demod_cf.h>
-#include <gnuradio/io_signature.h>
-#include <gnuradio/gr_complex.h>
-#include <gnuradio/blocks/null_sink.h>
-#include <gnuradio/soapy/source.h>
-#include <gnuradio/soapy/sink.h>
-#include <gnuradio/blocks/complex_to_float.h>
-#include <gnuradio/analog/frequency_modulator_fc.h>
-
-#include <gnuradio/audio/source.h>
-#include <gnuradio/blocks/wavfile_source.h>
-#include <gnuradio/analog/frequency_modulator_fc.h>
-#include <gnuradio/analog/sig_source.h>
-
-#include "custombuffer.h"
-
-#include <SoapySDR/Device.hpp>
-#include <SoapySDR/Formats.hpp>
-#include <SoapySDR/Errors.hpp>
-#include <SoapySDR/Time.hpp>
-
-#define _GHZ(x) ((uint64_t)(x) * 1000000000)
-#define _MHZ(x) ((x) * 1000000)
-#define _KHZ(x) ((x) * 1000)
-#define _HZ(x) ((x) * 1)
-#define DEFAULT_SAMPLE_RATE             _MHZ(20)
-#define DEFAULT_AUDIO_SAMPLE_RATE       _KHZ(44.1)
-#define DEFAULT_CUT_OFF                 _KHZ(300)
-#define DEFAULT_FREQUENCY               _MHZ(144)
-#define DEFAULT_AUDIO_GAIN              1.0
-#define DEFAULT_FFT_SIZE                8192 * 4
-#define DEFAULT_FFT_RATE                25 //Hz
-#define MAX_FFT_SIZE                 DEFAULT_FFT_SIZE
-#define RESET_FFT_FACTOR             -72
-
-#define HACKRF_RX_VGA_MAX_DB 62.0
-#define HACKRF_TX_VGA_MAX_DB 47.0
-#define HACKRF_RX_LNA_MAX_DB 40.0
-#define HACKRF_AMP_MAX_DB 14.0
+#include "fm_transmitter.h"
+#include "fm_receiver.h"
 
 typedef enum {
     DEMOD_AM,
@@ -81,30 +35,18 @@ public:
 
     void setFrequency(double frequency);
     double getCenterFrequency() const;
-    void setMode(ReceiverMode rMode);
+    void setMode(ReceiverMode rMode, int frequency);
 
     void start();
     void stop();
 
 private:
-    gr::soapy::source::sptr hackrf_soapy_source;
-    gr::soapy::sink::sptr hackrf_soapy_sink;
-    gr::top_block_sptr tb;
-    std::shared_ptr<CustomBuffer> customBuffer;
-
-    int sample_rate ;
-    int audio_samp_rate;
-    int transition;
-    int decimation;
-    int interpolation;
-    int resampler_decimation;
-    int cut_off;
-    double audio_gain;
-    double currentFrequency;    
-    bool m_ptt;
+    bool m_isStarted;
     Demod currentDemod;
     FreqMod currentFreqMod;
     ReceiverMode currentReceiverMode;
+    FmTransmitter *_transmitter;
+    FmReceiver *_receiver;
 
     QString enumDemodToString(Demod demod)
     {
