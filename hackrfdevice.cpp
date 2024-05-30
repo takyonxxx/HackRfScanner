@@ -189,12 +189,6 @@ void HackRfDevice::apply_modulation(int8_t* buffer, uint32_t length)
         mic_buffer.insert(mic_buffer.end(), mic_buffer.begin(), mic_buffer.begin() + samplesToCopy);
     }
 
-//    // Debug output: Print each sample in mic_buffer
-//    for (float sample : mic_buffer) {
-//        qDebug() << sample;
-//    }
-
-
     for (uint32_t sampleIndex = 0; sampleIndex < length; sampleIndex += 2) {
         // Calculate time
         double time = (current_tx_sample + sampleIndex / 2) / hackrf_sample_rate;
