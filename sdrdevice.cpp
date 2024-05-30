@@ -17,10 +17,11 @@ SdrDevice::SdrDevice(QObject *parent):
     interpolation          = 1;
     resampler_decimation   = 70;
 
-    currentReceiverMode = ReceiverMode::RX;
+    currentReceiverMode = ReceiverMode::TX;
     customBuffer = std::make_shared<CustomBuffer>("custom_buffer");
 
     try {
+
         std::string dev = "hackrf=0";
         std::string stream_args = "";
         std::vector<std::string> tune_args = {""};
@@ -39,16 +40,16 @@ SdrDevice::SdrDevice(QObject *parent):
                 );
 
             if (!hackrf_soapy_sink) {
-                throw std::runtime_error("Failed to create SoapySDR sink.");
+                qDebug() << "Failed to create SoapySDR sink.";
+                return;
             }
 
-            hackrf_soapy_sink->set_sample_rate(1, sample_rate/20);
-            hackrf_soapy_sink->set_bandwidth(1, 0);
-            hackrf_soapy_sink->set_frequency(1, currentFrequency);
-            hackrf_soapy_sink->set_gain(1, "AMP", true);
-            hackrf_soapy_sink->set_gain(1, "VGA", std::min(std::max(29.0, 0.0), HACKRF_TX_VGA_MAX_DB));
+            hackrf_soapy_sink->set_sample_rate(0, sample_rate/20);
+            hackrf_soapy_sink->set_bandwidth(0, 0);
+            hackrf_soapy_sink->set_frequency(0, currentFrequency);
+            hackrf_soapy_sink->set_gain(0, "AMP", true);
+            hackrf_soapy_sink->set_gain(0, "VGA", std::min(std::max(29.0, 0.0), HACKRF_TX_VGA_MAX_DB));
 
-            // Print device information
             qDebug() << "Center Frequency: " << hackrf_soapy_sink->get_frequency(0) << " Hz";
             qDebug() << "Sample Rate: " << hackrf_soapy_sink->get_sample_rate(0) << " Hz";
             qDebug() << "Actual TX Gain: " << hackrf_soapy_sink->get_gain(0) << " dB...";
@@ -85,12 +86,11 @@ SdrDevice::SdrDevice(QObject *parent):
             qDebug() << "VGA Gain: " << hackrf_soapy_source->get_gain(0, "VGA") << " dB";
         }
 
+
     } catch (const std::exception &e) {
         qDebug() << "Source Error: " << e.what();
-    }
-
-    tb = gr::make_top_block("HackRf");
-    setMode(currentReceiverMode);
+    }    
+//    setMode(currentReceiverMode);
 }
 
 SdrDevice::~SdrDevice()
@@ -110,9 +110,10 @@ double SdrDevice::getCenterFrequency() const
 }
 
 void SdrDevice::setMode(ReceiverMode rMode)
-{   
+{
+    tb = gr::make_top_block("HackRf");
     tb->disconnect_all();
-    gr::blocks::null_sink::sptr null_sink = gr::blocks::null_sink::make(sizeof(gr_complex) / 2);    
+//    gr::blocks::null_sink::sptr null_sink = gr::blocks::null_sink::make(sizeof(gr_complex) / 2);
 
     if (rMode == ReceiverMode::TX) {
         std::vector<float> pre_emphasis_taps = {/* coefficients for pre-emphasis */};
@@ -121,7 +122,6 @@ void SdrDevice::setMode(ReceiverMode rMode)
         gr::filter::rational_resampler_ccf::sptr resampler_tx = gr::filter::rational_resampler_ccf::make(48, 1);
         float sensitivity = 2.0 * M_PI * (5e3 / audio_samp_rate);  // max_dev/audio_samp_rate
         auto fm_mod = gr::analog::frequency_modulator_fc::make(sensitivity);
-
         tb->connect(audio_source, 0, pre_emphasis_filter, 0);
         tb->connect(pre_emphasis_filter, 0, fm_mod, 0);
         tb->connect(fm_mod, 0, resampler_tx, 0);
@@ -131,21 +131,16 @@ void SdrDevice::setMode(ReceiverMode rMode)
     } else if (rMode == ReceiverMode::RX)
     {
         gr::filter::rational_resampler_ccf::sptr resampler_rx = gr::filter::rational_resampler_ccf::make(interpolation, resampler_decimation);
-
         auto low_pass_filter = gr::filter::fir_filter_fff::make(
             decimation,
             gr::filter::firdes::low_pass(1, sample_rate, cut_off, transition, gr::fft::window::WIN_HAMMING));
-
         gr::analog::quadrature_demod_cf::sptr quad_demod = gr::analog::quadrature_demod_cf::make(1.0);
-
         auto audio_sink = gr::audio::sink::make(audio_samp_rate, "", true);
-
         tb->connect(hackrf_soapy_source, 0, resampler_rx, 0);
         // tb->connect(hackrf_soapy_source, 0, customBuffer, 0);
         tb->connect(resampler_rx, 0, quad_demod, 0);
         tb->connect(quad_demod, 0, low_pass_filter, 0);
         tb->connect(low_pass_filter, 0, audio_sink, 0);
-
         qDebug() << "Switched to RX mode.";
     }
 }
