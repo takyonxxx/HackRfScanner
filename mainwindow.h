@@ -6,6 +6,7 @@
 #include <QApplication>
 #include <QDebug>
 #include "sdrdevice.h"
+#include "hackrfdevice.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -43,6 +44,7 @@ private:
     QString m_sSettingsFile;
     int freq_type_index;
     int demod_index;
+    HackRfDevice *hackRfDevice{};
 
     Ui::MainWindow *ui;
 };

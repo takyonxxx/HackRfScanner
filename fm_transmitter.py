@@ -25,7 +25,6 @@ from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
 from gnuradio import soapy
-import sip
 
 
 
@@ -88,57 +87,14 @@ class fm_transmitter(gr.top_block, Qt.QWidget):
         self.soapy_hackrf_sink_0.set_bandwidth(0, 0)
         self.soapy_hackrf_sink_0.set_frequency(0, center_freq)
         self.soapy_hackrf_sink_0.set_gain(0, 'AMP', True)
-        self.soapy_hackrf_sink_0.set_gain(0, 'VGA', min(max(35, 0.0), 47.0))
+        self.soapy_hackrf_sink_0.set_gain(0, 'VGA', min(max(29, 0.0), 47.0))
         self.rational_resampler_xxx_0 = filter.rational_resampler_ccc(
-                interpolation=(int(tx_samp_rate / audio_samp_rate) + 3),
+                interpolation=50,
                 decimation=1,
                 taps=[],
                 fractional_bw=0)
-        self.freq_sink = qtgui.freq_sink_c(
-            8192, #size
-            window.WIN_HAMMING, #wintype
-            center_freq, #fc
-            tx_samp_rate, #bw
-            "", #name
-            1,
-            None # parent
-        )
-        self.freq_sink.set_update_time(0.10)
-        self.freq_sink.set_y_axis((-140), 10)
-        self.freq_sink.set_y_label('Relative Gain', 'dB')
-        self.freq_sink.set_trigger_mode(qtgui.TRIG_MODE_FREE, 0.0, 0, "")
-        self.freq_sink.enable_autoscale(True)
-        self.freq_sink.enable_grid(True)
-        self.freq_sink.set_fft_average(0.05)
-        self.freq_sink.enable_axis_labels(True)
-        self.freq_sink.enable_control_panel(True)
-        self.freq_sink.set_fft_window_normalized(False)
-
-
-
-        labels = ['', '', '', '', '',
-            '', '', '', '', '']
-        widths = [1, 1, 1, 1, 1,
-            1, 1, 1, 1, 1]
-        colors = ["blue", "red", "green", "black", "cyan",
-            "magenta", "yellow", "dark red", "dark green", "dark blue"]
-        alphas = [1.0, 1.0, 1.0, 1.0, 1.0,
-            1.0, 1.0, 1.0, 1.0, 1.0]
-
-        for i in range(1):
-            if len(labels[i]) == 0:
-                self.freq_sink.set_line_label(i, "Data {0}".format(i))
-            else:
-                self.freq_sink.set_line_label(i, labels[i])
-            self.freq_sink.set_line_width(i, widths[i])
-            self.freq_sink.set_line_color(i, colors[i])
-            self.freq_sink.set_line_alpha(i, alphas[i])
-
-        self._freq_sink_win = sip.wrapinstance(self.freq_sink.qwidget(), Qt.QWidget)
-        self.top_layout.addWidget(self._freq_sink_win)
-        self.freq_sink.set_block_alias("Spectrum")
         self.blocks_multiply_const_vxx_0 = blocks.multiply_const_ff(mic_gain)
-        self.audio_source_0 = audio.source(44100, '', True)
+        self.audio_source_0 = audio.source(audio_samp_rate, '', True)
         self.analog_wfm_tx_0 = analog.wfm_tx(
         	audio_rate=audio_samp_rate,
         	quad_rate=audio_samp_rate,
@@ -154,7 +110,6 @@ class fm_transmitter(gr.top_block, Qt.QWidget):
         self.connect((self.analog_wfm_tx_0, 0), (self.rational_resampler_xxx_0, 0))
         self.connect((self.audio_source_0, 0), (self.blocks_multiply_const_vxx_0, 0))
         self.connect((self.blocks_multiply_const_vxx_0, 0), (self.analog_wfm_tx_0, 0))
-        self.connect((self.rational_resampler_xxx_0, 0), (self.freq_sink, 0))
         self.connect((self.rational_resampler_xxx_0, 0), (self.soapy_hackrf_sink_0, 0))
 
 
@@ -171,7 +126,6 @@ class fm_transmitter(gr.top_block, Qt.QWidget):
 
     def set_tx_samp_rate(self, tx_samp_rate):
         self.tx_samp_rate = tx_samp_rate
-        self.freq_sink.set_frequency_range(self.center_freq, self.tx_samp_rate)
         self.soapy_hackrf_sink_0.set_sample_rate(0, self.tx_samp_rate)
 
     def get_mic_gain(self):
@@ -186,7 +140,6 @@ class fm_transmitter(gr.top_block, Qt.QWidget):
 
     def set_center_freq(self, center_freq):
         self.center_freq = center_freq
-        self.freq_sink.set_frequency_range(self.center_freq, self.tx_samp_rate)
         self.soapy_hackrf_sink_0.set_frequency(0, self.center_freq)
 
     def get_audio_samp_rate(self):

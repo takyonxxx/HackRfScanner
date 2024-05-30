@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "hackrfdevice.h"
 #include "ui_mainwindow.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -44,7 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_cFreqType->setCurrentIndex(freq_type_index);
     ui->m_cDemod->setCurrentIndex(demod_index);
 
-    auto hackRfDevice = new HackRfDevice(this);
+    hackRfDevice = new HackRfDevice(this);
 
 //    sdrDevice = new SdrDevice(this);
 //    connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
@@ -61,7 +60,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
-    delete sdrDevice;
+    if (hackRfDevice) {
+        delete hackRfDevice;
+        hackRfDevice = nullptr;
+    }
+    if (sdrDevice) {
+        delete sdrDevice;
+        sdrDevice = nullptr;
+    }
     delete ui;
 }
 

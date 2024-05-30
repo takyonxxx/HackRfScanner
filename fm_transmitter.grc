@@ -107,7 +107,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [352, 136.0]
+    coordinate: [360, 260.0]
     rotation: 0
     state: enabled
 - name: audio_source_0
@@ -121,7 +121,7 @@ blocks:
     minoutbuf: '0'
     num_outputs: '1'
     ok_to_block: 'True'
-    samp_rate: '44100'
+    samp_rate: audio_samp_rate
   states:
     bus_sink: false
     bus_source: false
@@ -144,88 +144,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [192, 156.0]
-    rotation: 0
-    state: enabled
-- name: freq_sink
-  id: qtgui_freq_sink_x
-  parameters:
-    affinity: ''
-    alias: Spectrum
-    alpha1: '1.0'
-    alpha10: '1.0'
-    alpha2: '1.0'
-    alpha3: '1.0'
-    alpha4: '1.0'
-    alpha5: '1.0'
-    alpha6: '1.0'
-    alpha7: '1.0'
-    alpha8: '1.0'
-    alpha9: '1.0'
-    autoscale: 'True'
-    average: '0.05'
-    axislabels: 'True'
-    bw: tx_samp_rate
-    color1: '"blue"'
-    color10: '"dark blue"'
-    color2: '"red"'
-    color3: '"green"'
-    color4: '"black"'
-    color5: '"cyan"'
-    color6: '"magenta"'
-    color7: '"yellow"'
-    color8: '"dark red"'
-    color9: '"dark green"'
-    comment: ''
-    ctrlpanel: 'True'
-    fc: center_freq
-    fftsize: '8192'
-    freqhalf: 'True'
-    grid: 'True'
-    gui_hint: ''
-    label: Relative Gain
-    label1: ''
-    label10: ''''''
-    label2: ''''''
-    label3: ''''''
-    label4: ''''''
-    label5: ''''''
-    label6: ''''''
-    label7: ''''''
-    label8: ''''''
-    label9: ''''''
-    legend: 'True'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    name: '""'
-    nconnections: '1'
-    norm_window: 'False'
-    showports: 'True'
-    tr_chan: '0'
-    tr_level: '0.0'
-    tr_mode: qtgui.TRIG_MODE_FREE
-    tr_tag: '""'
-    type: complex
-    units: dB
-    update_time: '0.10'
-    width1: '1'
-    width10: '1'
-    width2: '1'
-    width3: '1'
-    width4: '1'
-    width5: '1'
-    width6: '1'
-    width7: '1'
-    width8: '1'
-    width9: '1'
-    wintype: window.WIN_HAMMING
-    ymax: '10'
-    ymin: '-140'
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [752, 20.0]
+    coordinate: [168, 216.0]
     rotation: 0
     state: enabled
 - name: rational_resampler_xxx_0
@@ -236,7 +155,7 @@ blocks:
     comment: ''
     decim: '1'
     fbw: '0'
-    interp: int(tx_samp_rate / audio_samp_rate) + 3
+    interp: '50'
     maxoutbuf: '0'
     minoutbuf: '0'
     taps: ''
@@ -260,12 +179,12 @@ blocks:
     dev_args: hackrf=0
     samp_rate: tx_samp_rate
     type: fc32
-    vga: '35'
+    vga: '29'
   states:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [752, 156.0]
+    coordinate: [816, 236.0]
     rotation: 0
     state: enabled
 
@@ -273,7 +192,6 @@ connections:
 - [analog_wfm_tx_0, '0', rational_resampler_xxx_0, '0']
 - [audio_source_0, '0', blocks_multiply_const_vxx_0, '0']
 - [blocks_multiply_const_vxx_0, '0', analog_wfm_tx_0, '0']
-- [rational_resampler_xxx_0, '0', freq_sink, '0']
 - [rational_resampler_xxx_0, '0', soapy_hackrf_sink_0, '0']
 
 metadata:

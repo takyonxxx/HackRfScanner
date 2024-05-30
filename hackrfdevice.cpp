@@ -9,13 +9,20 @@ static int paCallback(const void *inputBuffer, void *outputBuffer,
     float *in = (float *)inputBuffer;
     std::vector<float> *audioData = (std::vector<float> *)userData;
     audioData->insert(audioData->end(), in, in + framesPerBuffer);
+
+//    for (unsigned long i = 0; i < framesPerBuffer; ++i) {
+//        float sample = in[i]; // Access the i-th sample
+//        qDebug() << "Audio Data: " << sample;
+//    }
+
     return paContinue;
 }
+
 
 HackRfDevice::HackRfDevice(QObject *parent)
     : QObject(parent)
 {
-    if (!setupPortAudio(&stream, audioData)) {
+    if (!setupPortAudio(audioData)) {
         qDebug() << "Failed to setup PortAudio";
         return;
     }
@@ -45,13 +52,7 @@ HackRfDevice::HackRfDevice(QObject *parent)
         return;
     }
 
-
-//    if (hackrf_start_tx(m_device, tx_callbackStream, this) != HACKRF_SUCCESS) {
-//        qDebug() << "can not start tx stream";
-//        return;
-//    }
-
-    if (hackrf_start_tx(m_device, &HackRfDevice::tx_callbackStream, this) != HACKRF_SUCCESS) {
+    if (hackrf_start_tx(m_device, tx_callbackStream, (void *)this) != HACKRF_SUCCESS) {
         qDebug() << "Failed to start transmission.";
         return;
     }
@@ -64,6 +65,7 @@ HackRfDevice::HackRfDevice(QObject *parent)
 
 HackRfDevice::~HackRfDevice()
 {
+    qDebug() << "Exiting...";
     Pa_StopStream(stream);
     Pa_CloseStream(stream);
     Pa_Terminate();
@@ -74,27 +76,9 @@ HackRfDevice::~HackRfDevice()
 
 int HackRfDevice::tx_callbackStream(hackrf_transfer *transfer)
 {
-//    static std::vector<float> buffer;
-//    buffer.clear();
-//    {
-//        std::lock_guard<std::mutex> lock(audioDataMutex);
-//        buffer = audioData; // Copy audio data
-//        audioData.clear();  // Clear the original buffer
-//    }
-
-//    applyPreEmphasis(buffer, preEmphasisTaps); // Apply pre-emphasis filter
-//    fmModulate(buffer, sensitivity);          // Apply FM modulation
-
-//    size_t idx = 0;
-//    for (int i = 0; i < transfer->valid_length; i++) {
-//        transfer->buffer[i] = buffer[idx++] * 127; // Convert to int8 and fill transfer buffer
-//        if (idx >= buffer.size()) {
-//            idx = 0; // Loop the audio data
-//        }
-//    }
-    return 0;
+    HackRfDevice *obj = (HackRfDevice *)transfer->tx_ctx;
+    return obj->tx_callback((int8_t *)transfer->buffer, transfer->valid_length);
 }
-
 
 void HackRfDevice::set_frequency(uint64_t freq)
 {
@@ -122,42 +106,34 @@ bool HackRfDevice::force_sample_rate(double fs_hz)
     return false;
 }
 
-bool HackRfDevice::setupPortAudio(PaStream **stream, std::vector<float> &audioData)
+bool HackRfDevice::setupPortAudio(std::vector<float> &audioData)
 {
     PaError err = Pa_Initialize();
     if (err != paNoError) return false;
 
-    err = Pa_OpenDefaultStream(stream, 1, 0, paFloat32, DEFAULT_AUDIO_SAMPLE_RATE, FRAMES_PER_BUFFER, paCallback, &audioData);
-    if (err != paNoError) return false;
+    PaStreamParameters inputParameters;
+    inputParameters.device = Pa_GetDefaultInputDevice();
+    if (inputParameters.device == paNoDevice) {
+        std::cerr << "Error: No default input device found!" << std::endl;
+        Pa_Terminate();
+        return false;
+    }
+    inputParameters.channelCount = 1; // Mono input
+    inputParameters.sampleFormat = paFloat32;
+    inputParameters.suggestedLatency = Pa_GetDeviceInfo(inputParameters.device)->defaultHighInputLatency;
+    inputParameters.hostApiSpecificStreamInfo = nullptr;
 
-    err = Pa_StartStream(*stream);
+    err = Pa_OpenDefaultStream(&stream, 1, 0, paFloat32, DEFAULT_AUDIO_SAMPLE_RATE, FRAMES_PER_BUFFER, paCallback, &audioData);
+    if (err != paNoError) {
+        std::cerr << "PortAudio error: " << Pa_GetErrorText(err) << std::endl;
+        Pa_Terminate();
+        return false;
+    }
+
+    err = Pa_StartStream(stream);
     if (err != paNoError) return false;
 
     return true;
-}
-
-void HackRfDevice::applyPreEmphasis(std::vector<float> &audioData, const std::vector<float> &taps)
-{
-    std::vector<float> filtered(audioData.size(), 0);
-    for (size_t i = 0; i < audioData.size(); ++i) {
-        for (size_t j = 0; j < taps.size(); ++j) {
-            if (i >= j) {
-                filtered[i] += taps[j] * audioData[i - j];
-            }
-        }
-    }
-    audioData = filtered;
-}
-
-void HackRfDevice::fmModulate(std::vector<float> &audioData, float sensitivity)
-{
-    std::vector<float> modulated(audioData.size(), 0);
-    float phase = 0;
-    for (size_t i = 0; i < audioData.size(); ++i) {
-        phase += sensitivity * audioData[i];
-        modulated[i] = cos(phase);
-    }
-    audioData = modulated;
 }
 
 void HackRfDevice::set_sample_rate(uint64_t srate)
@@ -169,3 +145,74 @@ void HackRfDevice::set_sample_rate(uint64_t srate)
         sampleRate = srate;
 }
 
+const float CARRIER_FREQUENCY = 100000.0f;
+const float MODULATION_INDEX = 5.0f;
+const float SIGNAL_MULTIPLIER = 5.0f;
+const float AUDIO_SAMPLE_RATE = 44100.0f;
+const float TEST_FREQUENCY = 1000.0f;
+
+void HackRfDevice::apply_modulation(int8_t* buffer, uint32_t length)
+{
+    double modulationIndex = 5.0;
+    double amplitudeScalingFactor = 2.0;
+    double cutoffFreq = 150.0;
+    double hackrf_sample_rate = sampleRate;
+    double newSampleRate = 2 * sampleRate;
+    double resampleRatio = sampleRate / newSampleRate;
+
+    LowPassFilter filter(hackrf_sample_rate, cutoffFreq);
+
+    static std::vector<float> mic_buffer;
+    mic_buffer.clear();
+
+    {
+        std::lock_guard<std::mutex> lock(audioDataMutex);
+        mic_buffer = audioData;  // Copy audio data to mic_buffer
+        audioData.clear();       // Clear the original audioData buffer
+    }
+
+    // If mic_buffer is empty, fill the output buffer with zeros and return
+    if (mic_buffer.empty()) {
+        memset(buffer, 0, length);
+        return;
+    }
+
+    // If mic_buffer is smaller than half the length, repeat it until it matches or exceeds the length
+    while (mic_buffer.size() < length / 2) {
+        // Calculate the remaining space to fill in mic_buffer
+        size_t remainingSpace = (length / 2) - mic_buffer.size();
+
+        // Calculate how many samples to copy from the beginning of mic_buffer to fill the remaining space
+        size_t samplesToCopy = std::min(remainingSpace, mic_buffer.size());
+
+        // Append the required samples from the beginning of mic_buffer to fill the remaining space
+        mic_buffer.insert(mic_buffer.end(), mic_buffer.begin(), mic_buffer.begin() + samplesToCopy);
+    }
+
+//    // Debug output: Print each sample in mic_buffer
+//    for (float sample : mic_buffer) {
+//        qDebug() << sample;
+//    }
+
+
+    for (uint32_t sampleIndex = 0; sampleIndex < length; sampleIndex += 2) {
+        // Calculate time
+        double time = (current_tx_sample + sampleIndex / 2) / hackrf_sample_rate;
+        double interpolatedTime = time * resampleRatio;
+        double audioSignal = sin(2 * M_PI * 440 * time);
+//        double audioSignal = mic_buffer[sampleIndex / 2];
+        double filteredAudioSignal = filter.filter(audioSignal);
+        double modulatedPhase = 2 * M_PI * interpolatedTime + modulationIndex * filteredAudioSignal;
+        double inPhaseComponent = cos(modulatedPhase) * amplitudeScalingFactor;
+        double quadratureComponent = sin(modulatedPhase) * amplitudeScalingFactor;
+        buffer[sampleIndex] = static_cast<int8_t>(std::clamp(inPhaseComponent * 127, -127.0, 127.0));
+        buffer[sampleIndex + 1] = static_cast<int8_t>(std::clamp(quadratureComponent * 127, -127.0, 127.0));
+    }
+
+    current_tx_sample += length / 2;
+}
+
+int HackRfDevice::tx_callback(int8_t *buffer, uint32_t length) {
+    apply_modulation(buffer, length);
+    return 0;
+}
