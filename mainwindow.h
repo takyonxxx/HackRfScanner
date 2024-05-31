@@ -35,12 +35,10 @@ private slots:
     void getRxBuffer(const float* in, int size);
 private:
 
+//    std::vector<float> d_iqFftData;
+//    FFTPlotter *fftPlotter;
     std::vector<float> d_iqFftData;
     float           d_fftAvg;
-    float               *d_realFftData;
-    float               *d_iirFftData;
-    float               *d_pwrFftData;
-
 
     SdrDevice *sdrDevice{};
     FreqMod currentFreqMod;

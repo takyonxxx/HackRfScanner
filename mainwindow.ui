@@ -6,208 +6,176 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>637</width>
-    <height>507</height>
+    <width>669</width>
+    <height>392</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="CPlotter" name="plotter">
-    <property name="geometry">
-     <rect>
-      <x>50</x>
-      <y>330</y>
-      <width>541</width>
-      <height>71</height>
-     </rect>
-    </property>
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
-    <property name="minimumSize">
-     <size>
-      <width>0</width>
-      <height>0</height>
-     </size>
-    </property>
-    <property name="maximumSize">
-     <size>
-      <width>16777215</width>
-      <height>16777215</height>
-     </size>
-    </property>
-    <property name="frameShape">
-     <enum>QFrame::StyledPanel</enum>
-    </property>
-    <property name="frameShadow">
-     <enum>QFrame::Raised</enum>
-    </property>
-   </widget>
-   <widget class="QWidget" name="">
-    <layout class="QGridLayout" name="gridLayout">
-     <item row="5" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout">
-       <item>
-        <widget class="QPushButton" name="m_pDecFreq">
-         <property name="text">
-          <string>-</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="labelFreqStep">
-         <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
-         </property>
-         <property name="text">
-          <string>Step</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="m_cFreqStep"/>
-       </item>
-       <item>
-        <widget class="QPushButton" name="m_pIncFreq">
-         <property name="text">
-          <string>+</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="0" column="0">
-      <widget class="CFreqCtrl" name="freqCtrl">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>60</height>
-        </size>
-       </property>
-       <property name="toolTip">
-        <string/>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="1" column="0">
-      <widget class="CMeter" name="sMeter">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0">
-      <widget class="QPushButton" name="pushExit">
-       <property name="text">
-        <string>Exit</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QComboBox" name="m_cFreqType">
-         <item>
-          <property name="text">
-           <string>Hz</string>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="0">
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QComboBox" name="m_cFreqType">
+          <item>
+           <property name="text">
+            <string>Hz</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>KHz</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>MHz</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>GHz</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="m_pBPtt">
+          <property name="minimumSize">
+           <size>
+            <width>0</width>
+            <height>0</height>
+           </size>
           </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>KHz</string>
+          <property name="maximumSize">
+           <size>
+            <width>16777215</width>
+            <height>40</height>
+           </size>
           </property>
-         </item>
-         <item>
           <property name="text">
-           <string>MHz</string>
+           <string>RX</string>
           </property>
-         </item>
-         <item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="m_cDemod">
+          <item>
+           <property name="text">
+            <string>AM</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>WFM</string>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="CMeter" name="sMeter">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QPushButton" name="pushExit">
+        <property name="text">
+         <string>Exit</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="CFreqCtrl" name="freqCtrl">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>60</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QPushButton" name="m_pDecFreq">
           <property name="text">
-           <string>GHz</string>
+           <string>-</string>
           </property>
-         </item>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="m_pBPtt">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>40</height>
-          </size>
-         </property>
-         <property name="text">
-          <string>RX</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QComboBox" name="m_cDemod">
-         <item>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="labelFreqStep">
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
           <property name="text">
-           <string>AM</string>
+           <string>Step</string>
           </property>
-         </item>
-         <item>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="m_cFreqStep"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="m_pIncFreq">
           <property name="text">
-           <string>WFM</string>
+           <string>+</string>
           </property>
-         </item>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item row="4" column="0">
-      <widget class="QPushButton" name="pushToggleSdr">
-       <property name="text">
-        <string>Start</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="pushToggleSdr">
+        <property name="text">
+         <string>Start</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+   </layout>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
@@ -216,12 +184,6 @@
    <class>CFreqCtrl</class>
    <extends>QFrame</extends>
    <header>freqctrl.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>CPlotter</class>
-   <extends>QFrame</extends>
-   <header location="global">plotter.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
