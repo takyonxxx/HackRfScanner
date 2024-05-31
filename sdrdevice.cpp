@@ -3,7 +3,7 @@
 SdrDevice::SdrDevice(QObject *parent):
     QObject(parent)
 {
-    m_isStarted = false;
+    m_isStarted = false;    
 }
 
 SdrDevice::~SdrDevice()
@@ -67,6 +67,7 @@ void SdrDevice::setMode(ReceiverMode rMode, int frequency)
             delete _transmitter;
         }
         _receiver = new FmReceiver(frequency);
+        QObject::connect(_receiver, &FmReceiver::rxBuffer, this, &SdrDevice::getRxBuffer);
         if(m_isStarted)
             _receiver->start();
     }
@@ -96,4 +97,9 @@ void SdrDevice::stop()
         _receiver->stop();
     }
     m_isStarted = false;
+}
+
+void SdrDevice::getRxBuffer(const float *in, int size)
+{
+    emit rxBuffer(in, size);
 }

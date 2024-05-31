@@ -23,17 +23,24 @@ private slots:
     void infoFrequency(int f);
     void loadSettings();
     void saveSettings();
+    void onFreqCtrl_setFrequency(qint64 freq);
+    void fftTimeout();
 
     void on_pushToggleSdr_clicked();
-    void on_pushExit_clicked();
-    void on_m_pBSetFreq_clicked();
+    void on_pushExit_clicked();   
     void on_m_pIncFreq_clicked();
     void on_m_pDecFreq_clicked();
     void on_m_cFreqType_currentIndexChanged(int index);
     void on_m_cDemod_currentIndexChanged(int index);    
     void on_m_pBPtt_clicked();
-
+    void getRxBuffer(const float* in, int size);
 private:
+
+    float               *d_realFftData;
+    float               *d_iirFftData;
+    float               *d_pwrFftData;
+    float               d_fftAvg;
+
     SdrDevice *sdrDevice{};
     FreqMod currentFreqMod;
     Demod currentDemod;

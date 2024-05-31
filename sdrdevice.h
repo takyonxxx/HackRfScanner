@@ -39,7 +39,6 @@ public:
 
     void start();
     void stop();
-
 private:
     bool m_isStarted;
     Demod currentDemod;
@@ -77,7 +76,10 @@ private:
             return "Unknown";
         }
     }
-signals:   
+public slots:
+    void getRxBuffer(const float* in, int size);
+signals:
+    void rxBuffer(const float* in, int size);
     void infoFrequency(int f);
 };
 

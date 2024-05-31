@@ -1,21 +1,22 @@
 #ifndef FM_TRANSMITTER_H
 #define FM_TRANSMITTER_H
 
+#include <QtCore>
 #include <iostream>
-#include <QtWidgets>
 #include <gnuradio/top_block.h>
 #include <gnuradio/analog/frequency_modulator_fc.h>
 #include <gnuradio/audio/source.h>
 #include <gnuradio/blocks/multiply_const.h>
 #include <gnuradio/filter/rational_resampler.h>
 #include <gnuradio/soapy/sink.h>
-#include <signal.h>
 #include "constants.h"
 
-class FmTransmitter : public gr::top_block {
+class FmTransmitter : public QObject,public gr::top_block
+{
+    Q_OBJECT
 public:
-    FmTransmitter(int frequency) : gr::top_block("Fm Transmitter") {
-
+    FmTransmitter(int frequency) : QObject(nullptr), gr::top_block("Fm Transmitter")
+    {
         std::string dev = "hackrf=0";
         std::string stream_args = "";
         std::vector<std::string> tune_args = {""};
@@ -47,13 +48,13 @@ public:
         rational_resampler_xxx_0 = gr::filter::rational_resampler_ccf::make(interpolation, 1);
         blocks_multiply_const_vxx_0 = gr::blocks::multiply_const_ff::make(4);
         audio_source_0 = gr::audio::source::make(audio_samp_rate, "", true);
-        analog_frequency_modulator_fc_0 = gr::analog::frequency_modulator_fc::make(1.5);
+        analog_frequency_modulator_fc_0 = gr::analog::frequency_modulator_fc::make(2.0);
 
         // Connections
-        connect((const gr::block_sptr&)analog_frequency_modulator_fc_0, 0, (const gr::block_sptr&)rational_resampler_xxx_0, 0);
-        connect((const gr::block_sptr&)audio_source_0, 0, (const gr::block_sptr&)blocks_multiply_const_vxx_0, 0);
-        connect((const gr::block_sptr&)blocks_multiply_const_vxx_0, 0, (const gr::block_sptr&)analog_frequency_modulator_fc_0, 0);
-        connect((const gr::block_sptr&)rational_resampler_xxx_0, 0, (const gr::block_sptr&)soapy_hackrf_sink_0, 0);
+        gr::top_block::connect((const gr::block_sptr&)analog_frequency_modulator_fc_0, 0, (const gr::block_sptr&)rational_resampler_xxx_0, 0);
+        gr::top_block::connect((const gr::block_sptr&)audio_source_0, 0, (const gr::block_sptr&)blocks_multiply_const_vxx_0, 0);
+        gr::top_block::connect((const gr::block_sptr&)blocks_multiply_const_vxx_0, 0, (const gr::block_sptr&)analog_frequency_modulator_fc_0, 0);
+        gr::top_block::connect((const gr::block_sptr&)rational_resampler_xxx_0, 0, (const gr::block_sptr&)soapy_hackrf_sink_0, 0);
     }
 
     int getSample_rate() const;

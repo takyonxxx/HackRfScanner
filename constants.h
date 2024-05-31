@@ -15,7 +15,7 @@
 #define DEFAULT_CUT_OFF                 _KHZ(300)
 #define DEFAULT_FREQUENCY               _MHZ(144)
 #define DEFAULT_AUDIO_GAIN              1.0
-#define DEFAULT_FFT_SIZE                8192 * 4
+#define DEFAULT_FFT_SIZE                1024
 #define DEFAULT_FFT_RATE                25 //Hz
 #define MAX_FFT_SIZE                 DEFAULT_FFT_SIZE
 #define RESET_FFT_FACTOR             -72

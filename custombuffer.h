@@ -1,11 +1,7 @@
 #ifndef CUSTOMBUFFER_H
 #define CUSTOMBUFFER_H
 #include <QtCore>
-#include <complex>
 #include <gnuradio/sync_block.h>
-#include <fftw3.h>
-
-const double PI = acos(-1);
 
 
 class CustomBuffer : public QObject, public gr::sync_block
@@ -18,9 +14,8 @@ public:
 
     CustomBuffer(const std::string& device_name, QObject *parent = nullptr);
     ~CustomBuffer() override;
-
-    void connectToServer(const QString &hostAddress, quint16 port);
-    void performFFT(const float* data, int length);
+signals:
+    void rxBuffer(const float* in, int size);
 
 private:   
     int work(int noutput_items, gr_vector_const_void_star& input_items, gr_vector_void_star& output_items) override;
