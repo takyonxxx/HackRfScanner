@@ -5,6 +5,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     ,  m_ptt(false)
     ,  ui(new Ui::MainWindow)
+    ,  d_fftAvg(1.0 - 1.0e-2 * 90)
 {
     ui->setupUi(this);
     setWindowTitle("HackRf");
@@ -31,7 +32,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->freqCtrl->setFrequency(DEFAULT_FREQUENCY);
     connect(ui->freqCtrl, &CFreqCtrl::newFrequency, this, &MainWindow::onFreqCtrl_setFrequency);
 
-
     ui->pushToggleSdr->setStyleSheet("font-size: 24pt; font: bold; color: #ffffff; background-color: #097532;");
     ui->pushExit->setStyleSheet("font-size: 24pt; font: bold; color: #ffffff; background-color: #900C3F;");
 
@@ -41,30 +41,34 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_cFreqStep->addItem("50", QVariant(50));
     ui->m_cFreqStep->addItem("100", QVariant(100));
 
-    int m_LowCutFreq = _KHZ(-75);
-    int m_HiCutFreq = _KHZ(75);
-
-    ui->plotter->setTooltipsEnabled(true);
-
-    ui->plotter->setSampleRate(DEFAULT_SAMPLE_RATE);
-    ui->plotter->setSpanFreq(static_cast<quint32>(DEFAULT_SAMPLE_RATE));
-    ui->plotter->setCenterFreq(static_cast<quint64>(DEFAULT_FREQUENCY));
-
-    ui->plotter->setFftRange(-140.0f, 20.0f);
-    ui->plotter->setPandapterRange(-140.f, 20.f);
-    ui->plotter->setHiLowCutFrequencies(m_LowCutFreq, m_HiCutFreq);
-    ui->plotter->setDemodRanges(m_LowCutFreq, -_KHZ(5), _KHZ(5),m_HiCutFreq, true);
-
-    ui->plotter->setFreqUnits(_KHZ(1));
-    ui->plotter->setPercent2DScreen(50);
-    ui->plotter->setFilterBoxEnabled(true);
-    ui->plotter->setCenterLineEnabled(true);
-    ui->plotter->setClickResolution(1);
-
-    ui->plotter->setFftPlotColor(QColor("#CEECF5"));
+    int m_LowCutFreq = -120e3;
+    int m_HiCutFreq = 120e3;
 
     ui->sMeter->setMinimumHeight(60);
-    ui->sMeter->setStyleSheet("font-size: 24pt; font: bold; color: #ffffff; background-color: #0E8092;");
+    ui->sMeter->setStyleSheet("font-size: 24pt; font: bold; color: #ffffff; background-color: #350E06;");
+
+    // ui->plotter->setTooltipsEnabled(true);
+
+    // ui->plotter->setSampleRate(DEFAULT_SAMPLE_RATE);
+    // ui->plotter->setFftRate(20);
+    // ui->plotter->setSpanFreq(static_cast<quint32>(DEFAULT_SAMPLE_RATE));
+    // ui->plotter->setCenterFreq(static_cast<quint64>(currentFrequency));
+
+    // ui->plotter->setFftRange(-140.0f, 20.0f);
+    // ui->plotter->setPandapterRange(-140.f, 20.f);
+    // ui->plotter->setHiLowCutFrequencies(m_LowCutFreq, m_HiCutFreq);
+    // ui->plotter->setDemodRanges(m_LowCutFreq, _KHZ(5), _KHZ(5),m_HiCutFreq, true);
+
+    // ui->plotter->setFreqUnits(1000);
+    // ui->plotter->setPercent2DScreen(50);
+    // ui->plotter->setFilterBoxEnabled(true);
+    // ui->plotter->setCenterLineEnabled(true);
+    // ui->plotter->setClickResolution(1);
+
+    // ui->plotter->setFftPlotColor(QColor("#CEECF5"));
+    // ui->plotter->setFreqStep(_KHZ(5));
+    // //ui->plotter->setPeakDetection(true ,2);
+    // ui->plotter->setFftFill(true);
 
     currentDemod    = DEMOD_WFM;
     currentFreqMod  = MHZ;
@@ -92,6 +96,7 @@ MainWindow::MainWindow(QWidget *parent)
         loadSettings();
     else
         saveSettings();
+
 }
 
 MainWindow::~MainWindow()
@@ -122,11 +127,13 @@ void MainWindow::on_pushToggleSdr_clicked()
     if(ui->pushToggleSdr->text() == "Start")
     {
         sdrDevice->start();
+        m_stop = false;
         ui->pushToggleSdr->setText("Stop");
     }
     else
     {
         sdrDevice->stop();
+        m_stop = true;
         ui->pushToggleSdr->setText("Start");
     }
 }
@@ -273,93 +280,43 @@ void MainWindow::on_m_pBPtt_clicked()
 
 void MainWindow::getRxBuffer(const float *in, int size)
 {
-    qDebug() << size;
-//    // Perform FFT on the input data
-//    fftw_complex *fft_out;
-//    fft_out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * size);
+    const unsigned int fftsize = static_cast<unsigned int>(size);
 
-//    double* in_double = new double[size];
-//    for (int i = 0; i < size; ++i) {
-//        in_double[i] = static_cast<double>(in[i]);
-//    }
+    if (fftsize == 0)
+    {
+        return;
+    }
 
-//    // Create a plan for forward FFT
-//    fftw_plan plan_forward = fftw_plan_dft_r2c_1d(size, in_double, fft_out, FFTW_ESTIMATE);
+    d_fftAvg = static_cast<float>(1.0 - 1.0e-2 * 90);
 
-//    fftw_execute(plan_forward);
+    d_iqFftData.resize(fftsize);
 
-//    // Perform calculations or process the FFT data as needed
-//    for (int i = 0; i < size; ++i)
-//    {
-//        // Access the real and imaginary parts of the FFT result
-//        double real_part = fft_out[i][0];
-//        double imag_part = fft_out[i][1];
+    for (unsigned int i = 0; i < fftsize; ++i)
+    {
+        d_iqFftData[i] = in[i];
+    }
 
-//        // Process or perform calculations with the FFT result
-//        // For example, you can calculate magnitude, phase, etc.
-//        // Here, I'll just print them as an example
-//        qDebug() << "FFT result at index" << i << ": Real =" << real_part << ", Imaginary =" << imag_part;
-//    }
+    float pwr;
+    float pwr_scale = static_cast<float>(1.0 / fftsize);
+    double fullScalePower = 1.0;
+    double sum_signal_level = 0;
+    int num_iterations = 0;
 
-//    // Clean up FFT resources
-//    fftw_destroy_plan(plan_forward);
-//    fftw_free(fft_out);
-//    delete[] in_double;
-}
+    for (unsigned int i = 0; i < fftsize; i++)
+    {
+        pwr = pwr_scale * (d_iqFftData[i] * d_iqFftData[i]);
+        double fft_signal = 20 * std::log10(pwr / fftsize / fullScalePower);
+        auto level = 10 * std::log10(pwr + 1.0e-20f / fullScalePower);
+        sum_signal_level += level;
 
-void MainWindow::fftTimeout()
-{
-//    unsigned int fftsize;
-//    unsigned int i;
-//    float pwr;
-//    float pwr_scale;
-//    double fullScalePower = 1.0;
-//    std::complex<float> pt;
-//    double x_hat = 0; // State estimate
-//    double x_hat_level = 0; // State estimate
-//    double sum_signal_level = 0;
-//    int num_iterations = 0;
+        d_realFftData[i] = fft_signal;
+        d_iirFftData[i] += d_fftAvg * (d_realFftData[i] - d_iirFftData[i]);
+        num_iterations++;
+    }
 
-//    // 75 is default
-//    d_fftAvg = static_cast<float>(1.0 - 1.0e-2 * 90);
+    auto signal_level = sum_signal_level / num_iterations;
+    ui->sMeter->setLevel(signal_level);
+    // ui->plotter->setNewFttData(d_iirFftData, d_realFftData, static_cast<int>(fftsize));
 
-//    fftsize = static_cast<unsigned int>(m_Demodulator->fftSize());
-//    if (fftsize > MAX_FFT_SIZE)
-//        fftsize = MAX_FFT_SIZE;
-
-//    auto d_fftData = m_Demodulator->spectrum();
-//    if (fftsize == 0)
-//    {
-//        return;
-//    }
-
-//    pwr_scale = static_cast<float>(1.0 / fftsize);
-
-//    for (i = 0; i < fftsize; i++)
-//    {
-//        if (i < fftsize / 2)
-//        {
-//            pt = d_fftData[fftsize / 2 + i];
-//        }
-//        else
-//        {
-//            pt = d_fftData[i - fftsize / 2];
-//        }
-
-//        /* calculate power in dBFS */
-//        pwr = pwr_scale * (pt.imag() * pt.imag() + pt.real() * pt.real());
-
-//        /* calculate signal level in dBFS */
-//        double fft_signal = 20 * std::log10(pwr / fftsize / fullScalePower);
-//        auto level = 10 * std::log10(pwr + 1.0e-20f / fullScalePower);
-//        kalmanFilterUpdate(x_hat, fft_signal, 1);
-//        kalmanFilterUpdate(x_hat_level, level, 1);
-//        sum_signal_level += x_hat_level;
-//        d_realFftData[i] = x_hat;
-//        d_iirFftData[i] += d_fftAvg * (d_realFftData[i] - d_iirFftData[i]);
-//        num_iterations++;
-//    }
-
-//    signal_level = sum_signal_level / num_iterations;
-//    ui->plotter->setNewFttData(d_iirFftData, d_realFftData, static_cast<int>(fftsize));
+    // fftPlotter->setNewFftData(d_iqFftData.data(), static_cast<int>(fftsize));
 }

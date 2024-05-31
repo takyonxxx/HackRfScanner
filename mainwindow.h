@@ -24,7 +24,6 @@ private slots:
     void loadSettings();
     void saveSettings();
     void onFreqCtrl_setFrequency(qint64 freq);
-    void fftTimeout();
 
     void on_pushToggleSdr_clicked();
     void on_pushExit_clicked();   
@@ -36,16 +35,19 @@ private slots:
     void getRxBuffer(const float* in, int size);
 private:
 
+    std::vector<float> d_iqFftData;
+    float           d_fftAvg;
     float               *d_realFftData;
     float               *d_iirFftData;
     float               *d_pwrFftData;
-    float               d_fftAvg;
+
 
     SdrDevice *sdrDevice{};
     FreqMod currentFreqMod;
     Demod currentDemod;
     double currentFrequency;
     bool m_ptt;
+    bool m_stop;
 
     QString m_sSettingsFile;
     int freq_type_index;

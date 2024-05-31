@@ -48,7 +48,7 @@ public:
         rational_resampler_xxx_0 = gr::filter::rational_resampler_ccf::make(interpolation, 1);
         blocks_multiply_const_vxx_0 = gr::blocks::multiply_const_ff::make(4);
         audio_source_0 = gr::audio::source::make(audio_samp_rate, "", true);
-        analog_frequency_modulator_fc_0 = gr::analog::frequency_modulator_fc::make(2.0);
+        analog_frequency_modulator_fc_0 = gr::analog::frequency_modulator_fc::make(1.5);
 
         // Connections
         gr::top_block::connect((const gr::block_sptr&)analog_frequency_modulator_fc_0, 0, (const gr::block_sptr&)rational_resampler_xxx_0, 0);
