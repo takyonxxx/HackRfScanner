@@ -1,6 +1,11 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <cmath>
+#include <vector>
+#include <complex>
+#include <iostream>
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     ,  m_ptt(false)
@@ -35,7 +40,7 @@ MainWindow::MainWindow(QWidget *parent)
     currentFreqMod  = MHZ;    
     freq_type_index = 2;
     demod_index = 1;
-    d_iqFftData.resize(DEFAULT_FFT_SIZE);
+    d_fftAvg = static_cast<float>(1.0 - 1.0e-2 * 75);
 
     ui->m_cDemod->setCurrentIndex(demod_index);
 
@@ -57,11 +62,41 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_cFreqStep->addItem("50", QVariant(50));
     ui->m_cFreqStep->addItem("100", QVariant(100));
 
-    int m_LowCutFreq = -120e3;
-    int m_HiCutFreq = 120e3;
-    int flo = -5000;
-    int fhi = 5000;
-    int click_res = 100;
+
+    cPlotter = new CPlotter(this);
+
+    cPlotter->setTooltipsEnabled(true);
+
+    cPlotter->setSampleRate(DEFAULT_SAMPLE_RATE);
+    cPlotter->setSpanFreq(static_cast<quint32>(DEFAULT_SAMPLE_RATE));
+    cPlotter->setCenterFreq(static_cast<quint64>(currentFrequency));
+
+    cPlotter->setFftRange(-140.0f, 20.0f);
+    cPlotter->setFftRate(fftrate);
+    cPlotter->setPandapterRange(-140.f, 20.f);
+    cPlotter->setHiLowCutFrequencies(m_LowCutFreq, m_HiCutFreq);
+    cPlotter->setDemodRanges(m_LowCutFreq, -_KHZ(5), _KHZ(5),m_HiCutFreq, true);
+
+    cPlotter->setFreqUnits(1000);
+    cPlotter->setPercent2DScreen(50);
+    cPlotter->setFilterBoxEnabled(true);
+    cPlotter->setCenterLineEnabled(true);
+    cPlotter->setClickResolution(1);
+
+    cPlotter->setFftPlotColor(QColor("#CEECF5"));
+    cPlotter->setFreqStep(_KHZ(5));
+
+    //cPlotter->setPeakDetection(true ,2);
+    cPlotter->setFftFill(true);
+
+    connect(cPlotter, &CPlotter::newDemodFreq, this, &MainWindow::on_plotter_newDemodFreq);
+    connect(cPlotter, &CPlotter::newFilterFreq, this, &MainWindow::on_plotter_newFilterFreq);
+
+//    fftPlotter = new FFTPlotter(this);
+//    fftPlotter->setSampleRate(DEFAULT_SAMPLE_RATE);
+//    fftPlotter->setCenterFrequency(currentFrequency);
+
+    ui->plotterLayout->addWidget(cPlotter);
 
     ui->freqCtrl->setup(0, 0, 6000e6, 1, FCTL_UNIT_MHZ);
     ui->freqCtrl->setDigitColor(QColor("#FFC300"));
@@ -84,10 +119,26 @@ MainWindow::~MainWindow()
 }
 
 
+/* CPlotter::NewfilterFreq() is emitted or bookmark activated */
+void MainWindow::on_plotter_newFilterFreq(int low, int high)
+{
+    m_LowCutFreq = low;
+    m_HiCutFreq = high;
+}
+
+void MainWindow::on_plotter_newDemodFreq(qint64 freq, qint64 delta)
+{
+    Q_UNUSED(delta)
+    sdrDevice->setFrequency(freq);
+    currentFrequency = freq;
+    saveSettings();
+}
+
 void MainWindow::onFreqCtrl_setFrequency(qint64 freq)
 {
     sdrDevice->setFrequency(freq);
     currentFrequency = sdrDevice->getCenterFrequency();
+    cPlotter->setCenterFreq(static_cast<quint64>(currentFrequency));
     saveSettings();
 }
 
@@ -264,35 +315,21 @@ void resampleData(const std::vector<float>& in, std::vector<float>& out, int tar
 
 void MainWindow::getRxBuffer(const float *in, int size)
 {
-    const unsigned int fftsize = static_cast<unsigned int>(size);
-
-    if (fftsize == 0)
-    {
+    if (size == 0) {
         return;
     }
 
-    d_iqFftData.resize(fftsize);
-
-    for (unsigned int i = 0; i < fftsize; ++i)
-    {
-        d_iqFftData[i] = in[i];
-    }
-
-    float pwr;
-    float pwr_scale = static_cast<float>(1.0 / fftsize);
-    double fullScalePower = 1.0;
-    double sum_signal_level = 0;
+    int fft_size = size / 2;  // Size for FFT
+    std::vector<float> fft_output(fft_size);
+    float sum_signal_power = 0.0f;
     int num_iterations = 0;
 
-    for (unsigned int i = 0; i < fftsize; i++)
-    {
-        pwr = pwr_scale * (d_iqFftData[i] * d_iqFftData[i]);
-        double fft_signal = 20 * std::log10(pwr / fftsize / fullScalePower);
-        auto level = 10 * std::log10(pwr + 1.0e-20f / fullScalePower);
-        sum_signal_level += level;
-        num_iterations++;
-    }
+    // Process the buffer to compute FFT and power spectrum
+    processRxBuffer(in, size, fft_output.data(), sum_signal_power, num_iterations);
 
-    auto signal_level = sum_signal_level / num_iterations;
-    ui->sMeter->setLevel(signal_level);
+    // Pass the data arrays to the plotter
+    cPlotter->setNewFttData(fft_output.data(), fft_output.data(), fft_size);
+
+    auto signal_level_dB = 10 * log10(sum_signal_power / num_iterations);
+    ui->sMeter->setLevel(-1 * (100 - signal_level_dB));
 }

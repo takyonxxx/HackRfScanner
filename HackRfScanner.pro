@@ -9,6 +9,7 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    cplotter.cpp \
     custombuffer.cpp \
     fftplotter.cpp \
     freqctrl.cpp \
@@ -19,6 +20,7 @@ SOURCES += \
 
 HEADERS += \
     constants.h \
+    cplotter.h \
     custombuffer.h \
     fftplotter.h \
     fm_receiver.h \
@@ -78,7 +80,7 @@ macos {
     LIBS += -L$$HOMEBREW_CELLAR_PATH/hackrf/2024.02.1/lib -lhackrf
     LIBS += -L$$HOMEBREW_CELLAR_PATH/boost/1.85.0/lib -lboost_system -lboost_filesystem-mt -lboost_program_options
     LIBS += -L$$HOMEBREW_CELLAR_PATH/soapysdr/0.8.1_1/lib -lSoapySDR
-    LIBS += -L$$HOMEBREW_CELLAR_PATH/fftw/3.3.10_1/lib -lfftw3
+    LIBS += -L$$HOMEBREW_CELLAR_PATH/fftw/3.3.10_1/lib -lfftw3f -lfftw3
     LIBS += -L$$HOMEBREW_CELLAR_PATH/volk/3.1.2/lib -lvolk
     LIBS += -L$$HOMEBREW_CELLAR_PATH/portaudio/19.7.0/lib -lportaudio
 

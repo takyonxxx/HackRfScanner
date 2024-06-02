@@ -10,7 +10,7 @@
 #define _MHZ(x) ((x) * 1000000)
 #define _KHZ(x) ((x) * 1000)
 #define _HZ(x) ((x) * 1)
-#define DEFAULT_SAMPLE_RATE             _MHZ(20)
+#define DEFAULT_SAMPLE_RATE             _MHZ(4)
 #define DEFAULT_AUDIO_SAMPLE_RATE       _KHZ(44.1)
 #define DEFAULT_CUT_OFF                 _KHZ(300)
 #define DEFAULT_FREQUENCY               _MHZ(144)
