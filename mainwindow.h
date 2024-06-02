@@ -4,11 +4,13 @@
 #include <QMainWindow>
 #include <QCoreApplication>
 #include <QApplication>
+#include <QTimer>
 #include <QDebug>
 #include <fftw3.h>
 #include "sdrdevice.h"
 #include "fftplotter.h"
 #include "cplotter.h"
+#include "circular_buffer.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -51,6 +53,30 @@ public:
         }
     }
 
+    void resampleData(const std::vector<float>& in, std::vector<float>& out, int targetSize)
+    {
+        int originalSize = in.size();
+        out.resize(targetSize);
+
+        for (int i = 0; i < targetSize; ++i)
+        {
+            float index = static_cast<float>(i) * (originalSize - 1) / (targetSize - 1);
+            int lowIndex = static_cast<int>(std::floor(index));
+            int highIndex = static_cast<int>(std::ceil(index));
+            float weight = index - lowIndex;
+
+            if (lowIndex == highIndex)
+            {
+                out[i] = in[lowIndex];
+            }
+            else
+            {
+                out[i] = (1 - weight) * in[lowIndex] + weight * in[highIndex];
+            }
+        }
+    }
+
+
     void processRxBuffer(const float* in, int size, float* fft_output, float& sum_signal_power, int& num_iterations) {
         int fft_size = size / 2;  // Since the input is IQ, we divide by 2 for FFT size
 
@@ -70,7 +96,7 @@ public:
             maxPower = std::max(maxPower, norm(data[i]));
         }
         for (int i = 0; i < fft_size; i++) {
-            fft_output[i] = 1 * log10(norm(data[i]) / maxPower + 1.0e-20f);
+            fft_output[i] = 1.0 * log10(norm(data[i]) / maxPower + 1.0e-20f);
         }
 
         float amplificationFactor = 20.0f; // Example amplification factor
@@ -94,6 +120,7 @@ private slots:
     void onFreqCtrl_setFrequency(qint64 freq);
     void on_plotter_newFilterFreq(int low, int high);
     void on_plotter_newDemodFreq(qint64 , qint64 );
+    void fetchFFtData();
 
     void on_pushToggleSdr_clicked();
     void on_pushExit_clicked();   
@@ -121,12 +148,15 @@ private:
     FreqMod currentFreqMod;
     Demod currentDemod;
     double currentFrequency;
+    double sampleRate;
     bool m_ptt;
     bool m_stop;
 
     QString m_sSettingsFile;
     int freq_type_index;
     int demod_index;
+
+    CircularBuffer circular_buffer_;
 
     Ui::MainWindow *ui;
 };

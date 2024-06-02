@@ -7,8 +7,10 @@
 #include <iostream>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent)    
+    ,  sampleRate(DEFAULT_SAMPLE_RATE)
     ,  m_ptt(false)
+    ,  circular_buffer_(DEFAULT_SAMPLE_RATE)    
     ,  ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -49,7 +51,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     sdrDevice = new SdrDevice(this);
     connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
-    connect(sdrDevice, &SdrDevice::rxBuffer, this, &MainWindow::getRxBuffer);    
+    connect(sdrDevice, &SdrDevice::rxBuffer, this, &MainWindow::getRxBuffer);
 
     if (QFile(m_sSettingsFile).exists())
         loadSettings();
@@ -107,6 +109,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->m_cFreqType->setCurrentIndex(freq_type_index);
     ui->m_cDemod->setCurrentIndex(demod_index);
     ui->freqCtrl->setFrequency(currentFrequency);
+
+//    QTimer* timer = new QTimer(this);
+//    connect(timer, &QTimer::timeout, this, &MainWindow::fetchFFtData);
+//    int interval = 100;
+//    timer->setInterval(interval);
+//    timer->start();
 }
 
 MainWindow::~MainWindow()
@@ -263,7 +271,8 @@ void MainWindow::loadSettings()
     QSettings settings(m_sSettingsFile, QSettings::IniFormat);
     freq_type_index = settings.value("freq_type_index", "").toString().toInt();
     demod_index = settings.value("demod_index", "").toString().toInt();
-    currentFrequency = settings.value("current_frequency", "").toString().toDouble();   
+    currentFrequency = settings.value("current_frequency", "").toString().toDouble();
+    sampleRate = settings.value("sample_rate", "").toString().toInt();
 }
 
 void MainWindow::saveSettings()
@@ -272,6 +281,7 @@ void MainWindow::saveSettings()
     settings.setValue("freq_type_index", QString::number(freq_type_index));
     settings.setValue("demod_index", QString::number(demod_index));
     settings.setValue("current_frequency", QString::number(currentFrequency));
+    settings.setValue("sample_rate", QString::number(sampleRate));
 }
 
 void MainWindow::on_m_pBPtt_clicked()
@@ -324,12 +334,48 @@ void MainWindow::getRxBuffer(const float *in, int size)
     float sum_signal_power = 0.0f;
     int num_iterations = 0;
 
-    // Process the buffer to compute FFT and power spectrum
-    processRxBuffer(in, size, fft_output.data(), sum_signal_power, num_iterations);
+    int chunk_size = sampleRate;
 
-    // Pass the data arrays to the plotter
-    cPlotter->setNewFttData(fft_output.data(), fft_output.data(), fft_size);
+    if (size < chunk_size) {
+        chunk_size = size;
+    }
 
-    auto signal_level_dB = 10 * log10(sum_signal_power / num_iterations);
-    ui->sMeter->setLevel(-1 * (100 - signal_level_dB));
+    // Calculate the number of chunks in the input data
+    int num_chunks = size / chunk_size;
+
+    // Process each chunk separately
+    for (int i = 0; i < num_chunks; ++i) {
+        const float *chunk_start = in + i * chunk_size;
+        // Process the buffer to compute FFT and power spectrum
+        processRxBuffer(chunk_start, chunk_size, fft_output.data(), sum_signal_power, num_iterations);
+        // Pass the data arrays to the plotter
+        cPlotter->setNewFttData(fft_output.data(), fft_output.data(), chunk_size / 2); // Assuming FFT size is half of the chunk size
+        auto signal_level_dB = 10 * log10(sum_signal_power / num_iterations);
+        ui->sMeter->setLevel(-1 * (100 - signal_level_dB));
+    }
+
+    // Process the remaining data (if any)
+    int remaining_size = size % chunk_size;
+    if (remaining_size > 0) {
+        const float *remaining_chunk_start = in + num_chunks * chunk_size;
+        processRxBuffer(remaining_chunk_start, remaining_size, fft_output.data(), sum_signal_power, num_iterations);
+        cPlotter->setNewFttData(fft_output.data(), fft_output.data(), remaining_size / 2);
+        auto signal_level_dB = 10 * log10(sum_signal_power / num_iterations);
+        ui->sMeter->setLevel(-1 * (100 - signal_level_dB));
+    }
+}
+
+
+void MainWindow::fetchFFtData()
+{
+    auto length = DEFAULT_SAMPLE_RATE;
+    std::vector<float> data(length);  // Reserve space for the expected data size
+    while (data.size() < length) {
+        std::unique_lock<std::mutex> lock(circular_buffer_.mutex_);
+        circular_buffer_.data_available_.wait(lock, [&] {
+            return circular_buffer_.size() >= length;  // Wait until enough data is available
+        });
+        // Read data from circular buffer
+        circular_buffer_.read(data);
+    }
 }

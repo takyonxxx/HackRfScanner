@@ -50,7 +50,7 @@ public:
         soapy_hackrf_source_0->set_gain(0, "LNA", std::min(std::max(40.0, 0.0), HACKRF_RX_LNA_MAX_DB));
         soapy_hackrf_source_0->set_gain(0, "VGA", std::min(std::max(40.0, 0.0), HACKRF_RX_VGA_MAX_DB));
 
-        customBuffer = std::make_shared<CustomBuffer>("custom_buffer");
+        customBuffer = std::make_shared<CustomBuffer>("custom_buffer");        
         QObject::connect(customBuffer.get(), &CustomBuffer::rxBuffer, this, &FmReceiver::getRxBuffer);
         rational_resampler_xxx_0 = gr::filter::rational_resampler_ccf::make(interpolation, decimation);
         blocks_multiply_const_vxx_0 = gr::blocks::multiply_const_ff::make(1 / 1.0);
@@ -60,11 +60,10 @@ public:
             6,
             gr::filter::firdes::low_pass(1, sample_rate, cut_off, transition, gr::fft::window::WIN_HAMMING));
 
-        // Connections
         gr::top_block::connect((const gr::block_sptr&)soapy_hackrf_source_0, 0, (const gr::block_sptr&)customBuffer, 0);
         gr::top_block::connect((const gr::block_sptr&)soapy_hackrf_source_0, 0, (const gr::block_sptr&)rational_resampler_xxx_0, 0);
         gr::top_block::connect((const gr::block_sptr&)rational_resampler_xxx_0, 0, (const gr::block_sptr&)analog_quadrature_demod_cf_0, 0);
-        gr::top_block::connect((const gr::block_sptr&)analog_quadrature_demod_cf_0, 0, (const gr::block_sptr&)low_pass_filter, 0);
+        gr::top_block::connect((const gr::block_sptr&)analog_quadrature_demod_cf_0, 0, (const gr::block_sptr&)low_pass_filter, 0);       
         gr::top_block::connect((const gr::block_sptr&)low_pass_filter, 0, (const gr::block_sptr&)blocks_multiply_const_vxx_0, 0);
         gr::top_block::connect((const gr::block_sptr&)blocks_multiply_const_vxx_0, 0, (const gr::block_sptr&)audio_sink_0, 0);
 

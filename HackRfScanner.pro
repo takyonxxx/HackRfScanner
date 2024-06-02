@@ -19,6 +19,7 @@ SOURCES += \
     sdrdevice.cpp
 
 HEADERS += \
+    circular_buffer.h \
     constants.h \
     cplotter.h \
     custombuffer.h \
