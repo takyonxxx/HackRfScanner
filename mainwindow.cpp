@@ -10,7 +10,6 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)    
     ,  sampleRate(DEFAULT_SAMPLE_RATE)
     ,  m_ptt(false)
-    ,  circular_buffer_(DEFAULT_SAMPLE_RATE)    
     ,  ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -51,7 +50,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     sdrDevice = new SdrDevice(this);
     connect(sdrDevice, &SdrDevice::infoFrequency, this, &MainWindow::infoFrequency);
-    connect(sdrDevice, &SdrDevice::rxBuffer, this, &MainWindow::getRxBuffer);
 
     if (QFile(m_sSettingsFile).exists())
         loadSettings();
@@ -369,13 +367,5 @@ void MainWindow::getRxBuffer(const float *in, int size)
 void MainWindow::fetchFFtData()
 {
     auto length = DEFAULT_SAMPLE_RATE;
-    std::vector<float> data(length);  // Reserve space for the expected data size
-    while (data.size() < length) {
-        std::unique_lock<std::mutex> lock(circular_buffer_.mutex_);
-        circular_buffer_.data_available_.wait(lock, [&] {
-            return circular_buffer_.size() >= length;  // Wait until enough data is available
-        });
-        // Read data from circular buffer
-        circular_buffer_.read(data);
-    }
+    std::vector<float> data(length);
 }

@@ -76,10 +76,8 @@ private:
             return "Unknown";
         }
     }
-public slots:
-    void getRxBuffer(const float* in, int size);
-signals:
-    void rxBuffer(const float* in, int size);
+
+signals:   
     void infoFrequency(int f);
 };
 

@@ -50,8 +50,7 @@ public:
         soapy_hackrf_source_0->set_gain(0, "LNA", std::min(std::max(40.0, 0.0), HACKRF_RX_LNA_MAX_DB));
         soapy_hackrf_source_0->set_gain(0, "VGA", std::min(std::max(40.0, 0.0), HACKRF_RX_VGA_MAX_DB));
 
-        customBuffer = std::make_shared<CustomBuffer>("custom_buffer");        
-        QObject::connect(customBuffer.get(), &CustomBuffer::rxBuffer, this, &FmReceiver::getRxBuffer);
+        customBuffer = std::make_shared<CustomBuffer>("custom_buffer");
         rational_resampler_xxx_0 = gr::filter::rational_resampler_ccf::make(interpolation, decimation);
         blocks_multiply_const_vxx_0 = gr::blocks::multiply_const_ff::make(1 / 1.0);
         audio_sink_0 = gr::audio::sink::make(audio_samp_rate, "", true);
@@ -77,12 +76,7 @@ public:
 
     virtual ~FmReceiver() override
     {
-    }
-
-    void getRxBuffer(const float* in, int size)
-    {
-        emit rxBuffer(in, size);
-    }
+    }    
 
     int getSample_rate() const
     {
@@ -105,9 +99,6 @@ public:
         soapy_hackrf_source_0->set_frequency(0, newCurrentFrequency);
         currentFrequency = newCurrentFrequency;
     }
-
-signals:
-    void rxBuffer(const float* in, int size);
 
 private:
     int sample_rate;

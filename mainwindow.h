@@ -10,7 +10,6 @@
 #include "sdrdevice.h"
 #include "fftplotter.h"
 #include "cplotter.h"
-#include "circular_buffer.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -155,8 +154,6 @@ private:
     QString m_sSettingsFile;
     int freq_type_index;
     int demod_index;
-
-    CircularBuffer circular_buffer_;
 
     Ui::MainWindow *ui;
 };
